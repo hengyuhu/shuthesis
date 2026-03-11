@@ -8,7 +8,7 @@
 %% 
 %% This is a generated file.
 %% 
-%% Copyright (C) 2017-2024 by Zhenyu Zhang <zhenyuzhang@shu.edu.cn>
+%% Copyright (C) 2017-2026 by Zhenyu Zhang <zhenyuzhang@shu.edu.cn>
 %% 
 %% This file may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 2.0
@@ -175,7 +175,7 @@
   headsep=7mm,
   top=30mm,
   bottom=26mm,
-  footskip=7mm}
+  footskip=8mm}
 \RequirePackage{fancyhdr}
 \def\theoremautorefname{定理}
 \def\lemmaautorefname{引理}
@@ -288,7 +288,9 @@
 \DeclareCaptionLabelFormat{shu}{{\dawu[1.5]\heiti #1~\rmfamily #2}}
 \DeclareCaptionLabelSeparator{shu}{\hspace{1em}}
 \DeclareCaptionFont{shu}{\dawu[1.5]}
-\captionsetup{labelformat=shu,labelsep=shu,font=shu}
+\DeclareBiCaptionSeparator{shu}{\vspace{-6bp}}
+\DeclareBiCaptionSeparator{shu-m}{\vspace{0bp}}
+\captionsetup{labelformat=shu,labelsep=shu,font=shu,bi-slc=off,bi-separator=shu}
 \captionsetup[table]{position=top,belowskip={12bp-\intextsep},aboveskip=6bp}
 \captionsetup[figure]{position=bottom,belowskip={12bp-\intextsep},aboveskip=6bp}
 \captionsetup[sub]{font=shu,skip=6bp}

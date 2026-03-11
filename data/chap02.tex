@@ -43,17 +43,18 @@
 \section{多子图}
 多子图可使用 \texttt{subcaption} 宏包, 并配合.
 
-\texttt{subcaptionbox} 命令:
+\texttt{subcaptionbox} 命令，看第一个子图~\ref{fig:shu1}~和第二个子图~\ref{fig:shu2}.
 
 \begin{figure}[!htbp]
   \centering
-  \bisubcaptionbox{上海大学}{Shanghai University}{
+  \bisubcaptionbox{上海大学\label{fig:shu1}}{Shanghai University}{
     \includegraphics[scale=0.3]{shu.pdf}
   }
-  \bisubcaptionbox{上海大学logo}{Shanghai University logo}[.4\textwidth]{
+  \bisubcaptionbox{上海大学logo\label{fig:shu2}}{Shanghai University logo}[.4\textwidth]{
     \includegraphics[scale=0.3]{shulogo.pdf}
   }
-  \bicaption{\texttt{subcaptionbox} 多子图}{subcaptionbox}
+  \captionsetup{bi-separator=shu-m}
+  \bicaption{\texttt{subcaptionbox} 多子图}{This is a multi-subfigure with \texttt{subcaptionbox} and many many long caption. This is a multi-subfigure with \texttt{subcaptionbox} and many many long caption}
 \end{figure}
 
 
