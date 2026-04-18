@@ -1,5 +1,11 @@
+% ===================================================================
+% 参考文献数据库
+% 引用规则 (参照 shuthesis 示例)：\cite{key}
+% 样式：GB/T 7714-2015 (数字格式, 顺序编码制)
+% ===================================================================
+
 % -------------------------------------------------------------------
-% 本文作者已发表的学术论文
+% 本文作者已发表/投稿的学术论文
 % -------------------------------------------------------------------
 @inproceedings{hu2025bioinspired,
   author    = {Hu, Hengyu and Liu, Xiang and Wang, Yueying},
@@ -28,17 +34,17 @@
 % 无人艇综述与发展
 % -------------------------------------------------------------------
 @article{peng2021usv,
-  author  = {彭周华 and 吴文涛 and 王丹 and 等},
+  author  = {彭周华 and 吴文涛 and 王丹 and others},
   title   = {多无人艇集群协同控制研究进展与未来趋势},
   journal = {中国舰船研究},
   volume  = {16},
   number  = {1},
-  pages   = {51-64, 82},
+  pages   = {51-64},
   year    = {2021}
 }
 
 @article{liao2014usv,
-  author  = {廖煜雷 and 张铭钧 and 董早鹏 and 等},
+  author  = {廖煜雷 and 张铭钧 and 董早鹏 and others},
   title   = {无人艇运动控制方法的回顾与展望},
   journal = {中国造船},
   volume  = {55},
@@ -48,7 +54,7 @@
 }
 
 @article{jin2018marine,
-  author  = {金克帆 and 王鸿东 and 易宏 and 等},
+  author  = {金克帆 and 王鸿东 and 易宏 and others},
   title   = {海上无人装备关键技术与智能演进展望},
   journal = {中国舰船研究},
   volume  = {13},
@@ -74,27 +80,28 @@
   author    = {Isaacs, R.},
   title     = {Differential Games: A Mathematical Theory with Applications to Warfare and Pursuit, Control and Optimization},
   publisher = {Courier Corporation},
+  address   = {Mineola, NY},
   year      = {1999}
 }
 
 @article{lopez2019multiagent,
-  author  = {Lopez, V. G. and Lewis, F. L. and Wan, Y. and et al.},
+  author  = {Lopez, V. G. and Lewis, F. L. and Wan, Y. and others},
   title   = {Solutions for Multiagent Pursuit-Evasion Games on Communication Graphs: Finite-Time Capture and Asymptotic Behaviors},
   journal = {IEEE Transactions on Automatic Control},
   volume  = {65},
   number  = {5},
   pages   = {1911-1923},
-  year    = {2019}
+  year    = {2020}
 }
 
 @article{garcia2020multi,
-  author  = {Garcia, E. and Casbeer, D. W. and Von Moll, A. and et al.},
+  author  = {Garcia, E. and Casbeer, D. W. and Von Moll, A. and others},
   title   = {Multiple Pursuer Multiple Evader Differential Games},
   journal = {IEEE Transactions on Automatic Control},
   volume  = {66},
   number  = {5},
   pages   = {2345-2350},
-  year    = {2020}
+  year    = {2021}
 }
 
 @article{salimi2019differential,
@@ -111,10 +118,11 @@
 % 几何方法
 % -------------------------------------------------------------------
 @article{vonmoll2019multi,
-  author  = {Von Moll, A. and Casbeer, D. and Garcia, E. and et al.},
+  author  = {Von Moll, A. and Casbeer, D. and Garcia, E. and others},
   title   = {The Multi-Pursuer Single-Evader Game: A Geometric Approach},
-  journal = {Journal of Intelligent \& Robotic Systems},
+  journal = {Journal of Intelligent and Robotic Systems},
   volume  = {96},
+  number  = {2},
   pages   = {193-207},
   year    = {2019}
 }
@@ -122,24 +130,25 @@
 @article{ramana2017pursuit,
   author  = {Ramana, M. V. and Kothari, M.},
   title   = {Pursuit-Evasion Games of High Speed Evader},
-  journal = {Journal of Intelligent \& Robotic Systems},
+  journal = {Journal of Intelligent and Robotic Systems},
   volume  = {85},
+  number  = {2},
   pages   = {293-306},
   year    = {2017}
 }
 
 @article{tian2021distributed,
-  author  = {Tian, B. and Li, P. and Lu, H. and et al.},
+  author  = {Tian, B. and Li, P. and Lu, H. and others},
   title   = {Distributed Pursuit of an Evader with Collision and Obstacle Avoidance},
   journal = {IEEE Transactions on Cybernetics},
   volume  = {52},
   number  = {12},
   pages   = {13512-13520},
-  year    = {2021}
+  year    = {2022}
 }
 
 % -------------------------------------------------------------------
-% 启发式方法
+% 启发式/基于力的方法
 % -------------------------------------------------------------------
 @article{ni2011bioinspired,
   author  = {Ni, J. and Yang, S. X.},
@@ -162,51 +171,60 @@
 }
 
 % -------------------------------------------------------------------
-% 强化学习方法
+% 强化学习: 经典算法
 % -------------------------------------------------------------------
-@article{sutton1998introduction,
+@book{sutton2018reinforcement,
   author    = {Sutton, R. S. and Barto, A. G.},
-  title     = {Introduction to Reinforcement Learning},
+  title     = {Reinforcement Learning: An Introduction},
   publisher = {MIT Press},
-  year      = {1998}
+  address   = {Cambridge, MA},
+  edition   = {2nd},
+  year      = {2018}
 }
 
-@article{schulman2017ppo,
-  author  = {Schulman, J. and Wolski, F. and Dhariwal, P. and Radford, A. and Klimov, O.},
-  title   = {Proximal Policy Optimization Algorithms},
-  journal = {arXiv preprint arXiv:1707.06347},
-  year    = {2017}
+@misc{schulman2017ppo,
+  author = {Schulman, J. and Wolski, F. and Dhariwal, P. and Radford, A. and Klimov, O.},
+  title  = {Proximal Policy Optimization Algorithms},
+  note   = {arXiv preprint arXiv:1707.06347},
+  year   = {2017}
 }
 
 @inproceedings{lowe2017maddpg,
-  author    = {Lowe, R. and Wu, Y. and Tamar, A. and Harb, J. and Abbeel, P. and Mordatch, I.},
+  author    = {Lowe, R. and Wu, Y. and Tamar, A. and others},
   title     = {Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments},
   booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {30},
   pages     = {6382-6393},
   year      = {2017}
 }
 
-@article{yu2022surprising,
-  author  = {Yu, C. and Velu, A. and Vinitsky, E. and et al.},
-  title   = {The Surprising Effectiveness of {PPO} in Cooperative Multi-Agent Games},
-  journal = {Advances in Neural Information Processing Systems},
-  year    = {2022}
+@inproceedings{yu2022surprising,
+  author    = {Yu, C. and Velu, A. and Vinitsky, E. and others},
+  title     = {The Surprising Effectiveness of {PPO} in Cooperative Multi-Agent Games},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {35},
+  year      = {2022}
 }
 
 @inproceedings{haarnoja2018sac,
   author    = {Haarnoja, T. and Zhou, A. and Abbeel, P. and Levine, S.},
   title     = {Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor},
-  booktitle = {International Conference on Machine Learning},
+  booktitle = {Proceedings of the 35th International Conference on Machine Learning},
+  volume    = {80},
+  pages     = {1861-1870},
   year      = {2018}
 }
 
-@article{lillicrap2015continuous,
-  author  = {Lillicrap, T. P. and Hunt, J. J. and Pritzel, A. and et al.},
-  title   = {Continuous Control with Deep Reinforcement Learning},
-  journal = {arXiv preprint arXiv:1509.02971},
-  year    = {2015}
+@misc{lillicrap2015continuous,
+  author = {Lillicrap, T. P. and Hunt, J. J. and Pritzel, A. and others},
+  title  = {Continuous Control with Deep Reinforcement Learning},
+  note   = {arXiv preprint arXiv:1509.02971},
+  year   = {2015}
 }
 
+% -------------------------------------------------------------------
+% 强化学习: 无人艇博弈应用
+% -------------------------------------------------------------------
 @article{wangy2020cooperative,
   author  = {Wang, Y. and Dong, L. and Sun, C.},
   title   = {Cooperative Control for Multi-Player Pursuit-Evasion Games with Reinforcement Learning},
@@ -217,7 +235,7 @@
 }
 
 @article{xia2023cooperative,
-  author  = {Xia, J. and Luo, Y. and Liu, Z. and Zhang, Y. and Shi, H. and Liu, Z.},
+  author  = {Xia, J. and Luo, Y. and Liu, Z. and others},
   title   = {Cooperative Multi-Target Hunting by Unmanned Surface Vehicles Based on Multi-Agent Reinforcement Learning},
   journal = {Defence Technology},
   volume  = {29},
@@ -235,7 +253,7 @@
 }
 
 @article{drl_2018,
-  author  = {刘全 and 翟建伟 and 章宗长 and 钟珊 and 周倩 and 章鹏 and 徐进},
+  author  = {刘全 and 翟建伟 and 章宗长 and others},
   title   = {深度强化学习综述},
   journal = {计算机学报},
   volume  = {41},
@@ -245,7 +263,7 @@
 }
 
 @article{xia2023cooperativeusv,
-  author  = {夏家伟 and 朱旭芳 and 张建强 and 等},
+  author  = {夏家伟 and 朱旭芳 and 张建强 and others},
   title   = {基于多智能体强化学习的无人艇协同围捕方法},
   journal = {控制与决策},
   volume  = {38},
@@ -255,7 +273,7 @@
 }
 
 @article{su2022confrontation,
-  author  = {苏震 and 张钊 and 陈聪 and 等},
+  author  = {苏震 and 张钊 and 陈聪 and others},
   title   = {基于深度强化学习的无人艇集群博弈对抗},
   journal = {兵器装备工程学报},
   volume  = {43},
@@ -268,9 +286,10 @@
 % 注意力机制
 % -------------------------------------------------------------------
 @inproceedings{vaswani2017attention,
-  author    = {Vaswani, A. and Shazeer, N. and Parmar, N. and et al.},
-  title     = {Attention Is All You Need},
+  author    = {Vaswani, A. and Shazeer, N. and Parmar, N. and others},
+  title     = {Attention is All You Need},
   booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {30},
   pages     = {5998-6008},
   year      = {2017}
 }
@@ -278,14 +297,16 @@
 @inproceedings{iqbal2019maac,
   author    = {Iqbal, S. and Sha, F.},
   title     = {Actor-Attention-Critic for Multi-Agent Reinforcement Learning},
-  booktitle = {International Conference on Machine Learning},
+  booktitle = {Proceedings of the 36th International Conference on Machine Learning},
+  volume    = {97},
+  pages     = {2961-2970},
   year      = {2019}
 }
 
 % -------------------------------------------------------------------
 % TAD 博弈与目标防御
 % -------------------------------------------------------------------
-@article{garcia2018cooperative,
+@article{garcia2015defense,
   author  = {Garcia, E. and Casbeer, D. W. and Pachter, M.},
   title   = {Cooperative Strategies for Optimal Aircraft Defense from an Attacking Missile},
   journal = {Journal of Guidance, Control, and Dynamics},
@@ -295,7 +316,7 @@
   year    = {2015}
 }
 
-@article{garcia2019target,
+@article{garcia2021target,
   author  = {Garcia, E.},
   title   = {Cooperative Target Protection from a Superior Attacker},
   journal = {Automatica},
@@ -305,17 +326,18 @@
 }
 
 % -------------------------------------------------------------------
-% USV 建模相关
+% USV 建模与控制
 % -------------------------------------------------------------------
 @book{fossen2011handbook,
   author    = {Fossen, T. I.},
   title     = {Handbook of Marine Craft Hydrodynamics and Motion Control},
-  publisher = {John Wiley \& Sons},
+  publisher = {John Wiley and Sons},
+  address   = {Chichester, UK},
   year      = {2011}
 }
 
 @article{zhang2023finite,
-  author  = {Zhang, G. and Han, J. and Zhang, W. and et al.},
+  author  = {Zhang, G. and Han, J. and Zhang, W. and others},
   title   = {Finite-Time Adaptive Event-Triggered Control for {USV} with {COLREGs}-Compliant Collision Avoidance Mechanism},
   journal = {Ocean Engineering},
   volume  = {285},
@@ -324,11 +346,12 @@
 }
 
 % -------------------------------------------------------------------
-% 卡尔曼滤波
+% 状态估计
 % -------------------------------------------------------------------
 @book{simon2006optimal,
   author    = {Simon, D.},
   title     = {Optimal State Estimation: Kalman, {H}-infinity, and Nonlinear Approaches},
-  publisher = {John Wiley \& Sons},
+  publisher = {John Wiley and Sons},
+  address   = {Hoboken, NJ},
   year      = {2006}
 }

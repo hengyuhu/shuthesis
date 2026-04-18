@@ -377,3 +377,62 @@ graphicspath 顺序查找会错误匹配到其他章节的图片, 造成 "图片
 - ✅ 各章引言与第一章不再出现明显重复内容
 
 ---
+
+## 2026-04-18 · 图片尺寸优化 + 参考文献真实性与格式修正
+
+### 背景
+作者反馈两点问题: (1) 部分图片太小看不清 (尤其是含 3-4 子图的 figure); (2) 参考
+文献需严格按照 shuthesis 模板格式, 并核查真实性.
+
+### 一、图片尺寸优化
+
+| 位置 | 原尺寸/布局 | 新尺寸/布局 | 原因 |
+|---|---|---|---|
+| 图 3.5 训练阶段轨迹 (10/20/50.png) | 3 子图 @ 0.30\linewidth 一行 | 3 子图 @ 0.48\linewidth (2+1 布局) | 单行三图文字太小 |
+| 图 4.9 围捕快照 (pic1/2/3) | 3 子图 @ 0.31\linewidth 一行 | 3 子图 @ 0.48\linewidth (2+1 布局) | 单行三图文字太小 |
+| 图 5.5 APF 轨迹 (APF_1/2/3) | 3 子图 @ 0.23\linewidth | 3 子图 @ 0.32\linewidth | 每图仅占 23% 宽度, 看不清 |
+| 图 5.6 MAPPO 轨迹 (MAPPO_1-4) | 4 子图 @ 0.22\linewidth 一行 | 4 子图 @ 0.46\linewidth (2×2 布局) | 单行四图严重挤压 |
+| 图 5.7 TP-POCA 轨迹 (MA-POCA_1-4) | 4 子图 @ 0.22\linewidth 一行 | 4 子图 @ 0.46\linewidth (2×2 布局) | 同上 |
+
+### 二、参考文献真实性核查与修正
+
+逐条核查 refs.bib 中的文献, 修正以下问题:
+
+**类型错误**:
+- `sutton1998introduction` (@article) → `sutton2018reinforcement` (@book): Sutton & Barto 著作是教材, 书名正确应为 "Reinforcement Learning: An Introduction" (第 2 版 2018); 同步更新 chap01 和 chap02 中的 `\cite`
+- `yu2022surprising` (@article) → @inproceedings: NeurIPS 2022 发表在会议上
+- `schulman2017ppo` → @misc: arXiv preprint 规范应用 @misc 而非 @article
+- `lillicrap2015continuous` → @misc: 同上
+
+**年份修正** (根据实际 DOI 记录):
+- `lopez2019multiagent`: year 2019 → 2020 (IEEE TAC Vol 65 No 5 是 2020 年刊)
+- `garcia2020multi`: year 2020 → 2021 (IEEE TAC Vol 66 No 5 是 2021 年刊)
+- `tian2021distributed`: year 2021 → 2022 (IEEE TCYB Vol 52 No 12 是 2022 年刊)
+
+**key 与 year 不一致**:
+- `garcia2018cooperative` → `garcia2015defense` (实际 JGCD 2015 发表, 标题含 "Defense")
+- `garcia2019target` → `garcia2021target` (实际 Automatica 2021 发表)
+- 同步更新 chap01 的 `\cite`
+
+**字段规范化**:
+- 所有中文文献 `and 等` → `and others` (BibTeX 识别 "others" 会按语言自动转为 "等"/"et al.")
+- 所有英文文献 `and et al.` → `and others` (同上)
+- 书籍类条目补充 `address` (出版地) 与 `edition` (版本)
+- 会议论文补充 `volume` 与 `pages` (NeurIPS/ICML 实际数据)
+- 移除 `journal = {arXiv preprint ...}` 这种非规范用法
+
+**内容核查**:
+- `peng2021usv` pages 从 "51-64, 82" 改为 "51-64" (规范化页码范围)
+- 所有条目与开题报告、实际 DOI 记录交叉核对, 确保作者姓名、期刊名称、卷期页码准确
+- GB/T 7714-2015 的中英文区分由 bibstyle 自动处理, 不需手动加 "[J]" "[C]" 等
+
+### 编译验证
+- ✅ main.pdf 共 **86 页** (较上一版 84 页增加 2 页, 因图片放大)
+- ✅ 所有图片正常加载, 原先过小的子图现已清晰可见
+- ✅ 所有 `\cite` 均正确解析为新 key, 无 undefined
+- ✅ bibtex 顺利生成参考文献列表, 格式符合 GB/T 7714-2015
+
+### 剩余工作
+- 若审稿反馈或后期补充实验需增加新文献, 请继续在 refs.bib 中以规范格式添加 (推荐 @article/@inproceedings/@book/@misc 四类之一)
+
+---
