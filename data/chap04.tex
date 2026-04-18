@@ -35,7 +35,7 @@ $d_{CA}$ 为围捕判据半径, $R_{\mathrm{safe}}$ 为软碰撞安全半径.
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.75\linewidth]{problem.pdf}
+  \includegraphics[width=0.75\linewidth]{参考资料/TASE_终稿提交版/problem.pdf}
   \bicaption{多无人艇协同围捕博弈场景示意}{Illustration of multi-USV cooperative hunting game}
   \label{fig:hunt_scene}
 \end{figure}
@@ -125,9 +125,9 @@ U_{TPF}^{m}(\mathbf{q}) = -k_r\, e^{-\|\mathbf{q}-\mathbf{p}_{E_m}\|^2 / \sigma_
 
 \begin{figure}[!htbp]
   \centering
-  \subcaptionbox{三维能量分布\label{fig:tpf_3d}}{\includegraphics[width=0.45\linewidth]{blue_E.pdf}}
+  \subcaptionbox{三维能量分布\label{fig:tpf_3d}}{\includegraphics[width=0.45\linewidth]{参考资料/TASE_终稿提交版/blue_E.pdf}}
   \hfill
-  \subcaptionbox{俯视等高线投影\label{fig:tpf_top}}{\includegraphics[width=0.45\linewidth]{asdads.pdf}}
+  \subcaptionbox{俯视等高线投影\label{fig:tpf_top}}{\includegraphics[width=0.45\linewidth]{参考资料/TASE_终稿提交版/asdads.pdf}}
   \bicaption{威胁势场的能量分布}{Threat potential field around the evaders}
   \label{fig:tpf_field}
 \end{figure}
@@ -138,7 +138,7 @@ U_{TPF}^{m}(\mathbf{q}) = -k_r\, e^{-\|\mathbf{q}-\mathbf{p}_{E_m}\|^2 / \sigma_
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.72\linewidth]{position.pdf}
+  \includegraphics[width=0.72\linewidth]{参考资料/TASE_终稿提交版/position.pdf}
   \bicaption{协同围捕观测信息示意}{Schematic of the observational information for cooperative hunting}
   \label{fig:hunt_obs}
 \end{figure}
@@ -251,23 +251,23 @@ Actor 网络采用全连接结构; Critic 网络则在全连接层前插入上�
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.95\linewidth]{model1.pdf}
+  \includegraphics[width=0.95\linewidth]{参考资料/TASE_终稿提交版/model1.pdf}
   \bicaption{MHD-MAPPO 算法整体架构}{Overall architecture of MHD-MAPPO algorithm}
   \label{fig:mhd_mappo}
 \end{figure}
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.72\linewidth]{Drawing1.pdf}
+  \includegraphics[width=0.72\linewidth]{参考资料/TASE_终稿提交版/Drawing1.pdf}
   \bicaption{集中训练-分布式执行 (CTDE) 框架}{Centralized training and decentralized execution framework}
   \label{fig:ctde}
 \end{figure}
 
 \begin{figure}[!htbp]
   \centering
-  \subcaptionbox{Actor 网络\label{fig:actor_net}}{\includegraphics[width=0.3\linewidth]{left.pdf}}
+  \subcaptionbox{Actor 网络\label{fig:actor_net}}{\includegraphics[width=0.3\linewidth]{参考资料/TASE_终稿提交版/left.pdf}}
   \hfill
-  \subcaptionbox{Critic 网络 (含 MHA)\label{fig:critic_net}}{\includegraphics[width=0.42\linewidth]{right.pdf}}
+  \subcaptionbox{Critic 网络 (含 MHA)\label{fig:critic_net}}{\includegraphics[width=0.42\linewidth]{参考资料/TASE_终稿提交版/right.pdf}}
   \bicaption{MHD-MAPPO 中的 Actor 与 Critic 网络结构}{Actor and Critic network structures in MHD-MAPPO}
   \label{fig:actor_critic}
 \end{figure}
@@ -356,14 +356,14 @@ U_{\mathrm{tot}}^{m}(\mathbf{q}) = \sum_{n=1}^{N} U_{P_n}(\mathbf{q}) + \sum_{u=
 
 \begin{figure}[!htbp]
   \centering
-  \subcaptionbox{平均奖励\label{fig:hunt_reward}}{\includegraphics[width=0.44\linewidth]{reward}}
+  \subcaptionbox{平均奖励\label{fig:hunt_reward}}{\includegraphics[width=0.44\linewidth]{参考资料/TASE_终稿提交版/reward.pdf}}
   \hfill
-  \subcaptionbox{价值损失\label{fig:hunt_vloss}}{\includegraphics[width=0.44\linewidth]{value_loss}}
+  \subcaptionbox{价值损失\label{fig:hunt_vloss}}{\includegraphics[width=0.44\linewidth]{参考资料/TASE_终稿提交版/value_loss.pdf}}
 
   \vspace{8pt}
-  \subcaptionbox{策略损失\label{fig:hunt_ploss}}{\includegraphics[width=0.44\linewidth]{policy_loss}}
+  \subcaptionbox{策略损失\label{fig:hunt_ploss}}{\includegraphics[width=0.44\linewidth]{参考资料/TASE_终稿提交版/policy_loss.pdf}}
   \hfill
-  \subcaptionbox{策略熵损失\label{fig:hunt_ent}}{\includegraphics[width=0.44\linewidth]{entropy}}
+  \subcaptionbox{策略熵损失\label{fig:hunt_ent}}{\includegraphics[width=0.44\linewidth]{参考资料/TASE_终稿提交版/entropy.pdf}}
   \bicaption{MHD-MAPPO 与基线算法训练曲线对比}{Training curves of MHD-MAPPO vs. baselines}
   \label{fig:hunt_train_curve}
 \end{figure}
@@ -379,25 +379,25 @@ MHD-MAPPO 的围捕过程更为紧凑、协同性更强, 追-逃距离缩小更�
 
 \begin{figure}[!htbp]
   \centering
-  \subcaptionbox{确定性算法\label{fig:hunt_det}}{\includegraphics[width=0.45\linewidth]{path3}}
+  \subcaptionbox{确定性算法\label{fig:hunt_det}}{\includegraphics[width=0.45\linewidth]{参考资料/TASE_终稿提交版/path3.eps}}
   \hfill
-  \subcaptionbox{启发式算法\label{fig:hunt_heu}}{\includegraphics[width=0.45\linewidth]{path2}}
+  \subcaptionbox{启发式算法\label{fig:hunt_heu}}{\includegraphics[width=0.45\linewidth]{参考资料/TASE_终稿提交版/path2.eps}}
 
   \vspace{6pt}
-  \subcaptionbox{本文 MHD-MAPPO\label{fig:hunt_ours}}{\includegraphics[width=0.45\linewidth]{path1}}
+  \subcaptionbox{本文 MHD-MAPPO\label{fig:hunt_ours}}{\includegraphics[width=0.45\linewidth]{参考资料/TASE_终稿提交版/path1.eps}}
   \hfill
-  \subcaptionbox{追逃距离曲线\label{fig:hunt_dist}}{\includegraphics[width=0.45\linewidth]{path1_data}}
+  \subcaptionbox{追逃距离曲线\label{fig:hunt_dist}}{\includegraphics[width=0.45\linewidth]{参考资料/TASE_终稿提交版/path1_data.eps}}
   \bicaption{三种协同围捕算法的轨迹与距离曲线对比}{Trajectory and distance curves of three cooperative hunting schemes}
   \label{fig:hunt_compare}
 \end{figure}
 
 \begin{figure}[!htbp]
   \centering
-  \subcaptionbox{$t=20$ s (接近阶段)\label{fig:hunt_t20}}{\includegraphics[width=0.31\linewidth]{pic1}}
+  \subcaptionbox{$t=20$ s (接近阶段)\label{fig:hunt_t20}}{\includegraphics[width=0.31\linewidth]{参考资料/TASE_终稿提交版/pic1.png}}
   \hfill
-  \subcaptionbox{$t=50$ s (成型阶段)\label{fig:hunt_t50}}{\includegraphics[width=0.31\linewidth]{pic2}}
+  \subcaptionbox{$t=50$ s (成型阶段)\label{fig:hunt_t50}}{\includegraphics[width=0.31\linewidth]{参考资料/TASE_终稿提交版/pic2.png}}
   \hfill
-  \subcaptionbox{$t=80$ s (保持阶段)\label{fig:hunt_t80}}{\includegraphics[width=0.31\linewidth]{pic3}}
+  \subcaptionbox{$t=80$ s (保持阶段)\label{fig:hunt_t80}}{\includegraphics[width=0.31\linewidth]{参考资料/TASE_终稿提交版/pic3.png}}
   \bicaption{MHD-MAPPO 协同围捕过程不同时刻快照}{Snapshots of MHD-MAPPO cooperative hunting at different time instants}
   \label{fig:hunt_snapshots}
 \end{figure}
@@ -488,7 +488,7 @@ MHD-MAPPO 的围捕过程更为紧凑、协同性更强, 追-逃距离缩小更�
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.75\linewidth]{exper}
+  \includegraphics[width=0.75\linewidth]{参考资料/TASE_终稿提交版/exper.pdf}
   \bicaption{多无人艇实验平台整体结构与实物}{Structure and photograph of the multi-USV experimental platform}
   \label{fig:usv_photo}
 \end{figure}
@@ -536,10 +536,10 @@ $30\,\mathrm{m}\times 25\,\mathrm{m}$, 四周由安全警戒浮标围成, 以防
 
 \begin{figure}[!htbp]
   \centering
-  \subcaptionbox{追击者纵向速度\label{fig:hunt_v}}{\includegraphics[width=0.8\linewidth]{v}}
+  \subcaptionbox{追击者纵向速度\label{fig:hunt_v}}{\includegraphics[width=0.8\linewidth]{参考资料/TASE_终稿提交版/v.eps}}
 
   \vspace{4pt}
-  \subcaptionbox{追击者艏向角速度\label{fig:hunt_yaw}}{\includegraphics[width=0.8\linewidth]{yawspeed}}
+  \subcaptionbox{追击者艏向角速度\label{fig:hunt_yaw}}{\includegraphics[width=0.8\linewidth]{参考资料/TASE_终稿提交版/yawspeed.eps}}
   \bicaption{物理实验中追击者的运动状态}{Motion states of pursuers in physical experiments}
   \label{fig:hunt_exp_state}
 \end{figure}

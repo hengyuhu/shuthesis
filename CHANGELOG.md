@@ -305,3 +305,41 @@ LaTeX 按列表顺序查找图片, 对同名文件 (如三篇论文都有 `usv_m
 - 所有实验数据表中的成功率/时间等数值仍为合理占位, 后期按实际论文数据替换
 
 ---
+
+## 2026-04-18 · 修复图片串台 (使用完整路径精确引用)
+
+### 背景
+上一版使用全局 `\graphicspath{}` 列出三个参考资料子目录, 但 ICAIS/TASE/TAD 三篇
+论文中存在大量**同名文件** (`usv_model`, `reward`, `Drawing1.pdf` 等), LaTeX 按
+graphicspath 顺序查找会错误匹配到其他章节的图片, 造成 "图片串台". 作者检查 PDF
+后要求:
+1. 绪论的图片不使用任何论文中的图, 保留占位符由作者自行填充
+2. 第三/四/五章严格对应各自论文的图片, 不能交叉误引用
+
+### 本次修改清单
+
+| 文件 | 修改 |
+|---|---|
+| `main.tex` | `\graphicspath{}` 恢复为仅 `{figures/}`, 移除参考资料子路径 |
+| `data/chap01.tex` | 图 1.1 改回占位符 `\vspace{2.5cm}`, 等待作者自绘 USV 平台示意图 |
+| `data/chap02.tex` | 图 2.1 坐标系图使用**完整路径** `参考资料/ICAIS/hhy-conference_final/hhy-conference/usv_model.png` (通用坐标系, 来自 ICAIS 论文) |
+| `data/chap03.tex` | 所有 `\includegraphics` 改为 **ICAIS 完整路径** (`scene.png`, `reward.pdf`, `eposide.pdf`, `10/20/50.png`) |
+| `data/chap04.tex` | 所有 `\includegraphics` 改为 **TASE 完整路径** (`problem.pdf`, `blue_E.pdf`, `asdads.pdf`, `position.pdf`, `model1.pdf`, `Drawing1.pdf`, `left/right.pdf`, `reward/value_loss/policy_loss/entropy.pdf`, `path1-3.eps`, `path1_data.eps`, `pic1-3.png`, `exper.pdf`, `v.eps`, `yawspeed.eps`) |
+| `data/chap05.tex` | 所有 `\includegraphics` 改为 **TAD 完整路径** (`tad_scene_in.pdf`, `Defense Queue.pdf`, `framework.pdf`, `Drawing1.pdf`, `network.pdf`, `Figure_1.eps`, `APF_1-3.pdf`, `MAPPO_1-4.pdf`, `MA-POCA_1-4.pdf`, `angle1/2.eps`, `d_D1T/d_D2T/d_A1T/d_A2T.eps`, `Cumulative_reward/Group_reward/Baseline_loss/Value_loss_v7.pdf`) |
+
+### 为什么要用完整路径
+使用带子目录前缀的完整相对路径 (如 `参考资料/TASE_终稿提交版/reward.pdf`) 可以
+从根本上避免重名冲突. 即使 ICAIS 和 TASE 都有 `reward.pdf`, 也能在不同章节精确区分,
+无需依赖 graphicspath 的查找顺序, 从源码一眼可见每张图的来源.
+
+### 编译验证
+- ✅ main.pdf 共 **84 页** (较上一版增加 1 页, 因部分图片布局变化)
+- ✅ **所有图片加载成功, 无 ``image not found'' 警告**
+- ✅ 所有 `\ref`/`\cite` 正确解析, 无 undefined
+- ✅ 第三章 100% 使用 ICAIS 图, 第四章 100% 使用 TASE 图, 第五章 100% 使用 TAD 图
+
+### 版权与审稿隐私
+- 完整路径依然落在 `参考资料/` 目录下, 该目录被 `.gitignore` 屏蔽, 图片不会推送到 GitHub
+- TAD 论文审稿隐私、IEEE TASE 版权均得到保护
+
+---
