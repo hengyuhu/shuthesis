@@ -8,7 +8,15 @@
 %  nocolor                          % 提交最终版本时请打开此选项
 \usepackage{shuthesis}
 % \usepackage{newtxmath}
-\graphicspath{{figures/}}
+% 图片搜索路径 (按顺序查找, 前面的优先)
+% 1. figures/: 本文新增或自绘图片
+% 2. 参考资料/.../: 作者已发表/在审论文中的图片, 不上传至 GitHub
+\graphicspath{%
+  {figures/}%
+  {参考资料/ICAIS/hhy-conference_final/hhy-conference/}%
+  {参考资料/TASE_终稿提交版/}%
+  {参考资料/TAD_2_27/}%
+}
 
 \begin{document}
 \frontmatter

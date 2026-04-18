@@ -257,3 +257,51 @@ xelatex main
 - 物理实验章节的硬件参数表使用了典型 RTK USV 配置, 需按实际平台调整
 
 ---
+
+## 2026-04-18 · 接入已有论文的图片并修正 TAD 审稿状态
+
+### 背景
+作者将三篇论文的 LaTeX 源码与图片资源放入 `参考资料/` 目录, 要求直接复用图片.
+同时强调 TAD 论文 (第五章核心) 仍在审稿中, 需要调整相关表述与引用状态.
+
+### 本次修改清单
+
+| 文件 | 类型 | 说明 |
+|---|---|---|
+| `main.tex` | 扩展 | `\graphicspath{}` 追加三个参考资料路径, 使 LaTeX 能自动定位论文原图 |
+| `data/chap01.tex` | 图片 | 图 1.1 替换为 `usv_model.png` (USV 六自由度模型) |
+| `data/chap02.tex` | 图片 | 图 2.1 坐标系图替换为 `usv_model.png` |
+| `data/chap03.tex` | 图片 | 仿真场景 `scene.png`、训练曲线 `reward.pdf`/`eposide.pdf`、不同阶段轨迹 `10.png`/`20.png`/`50.png` |
+| `data/chap04.tex` | 图片 | 博弈场景 `problem.pdf`、威胁势场 `blue_E.pdf`/`asdads.pdf`、观测 `position.pdf`、MHD-MAPPO 架构 `model1.pdf`、CTDE 框架 `Drawing1.pdf`、Actor/Critic `left.pdf`/`right.pdf`、训练曲线 `reward`/`value_loss`/`policy_loss`/`entropy`、算法对比 `path1-3`/`path1_data`、时刻快照 `pic1-3`、实验平台 `exper`、运动数据 `v`/`yawspeed` |
+| `data/chap05.tex` | 图片 | TAD 场景 `tad_scene_in.pdf`/`Defense Queue.pdf`、TP-POCA 架构 `framework.pdf`、网络 `network.pdf`、CTDE `Drawing1.pdf`、奖励示意 `Figure_1.eps`、对比轨迹 `APF_*`/`MAPPO_*`/`MA-POCA_*`、性能曲线 `angle*`/`d_*`、学习曲线 `Cumulative_reward`/`Group_reward`/`Baseline_loss`/`Value_loss` |
+| `data/publications.tex` | 修改 | TAD 论文从 "IEEE SMC: Systems 2025" 改为 "已投稿 SMC, 在审稿中 (Under Review)" |
+| `reference/refs.bib` | 修改 | `hu2025tppoca` 条目类型由 `@article` 改为 `@unpublished`, 加 `note` 说明在审 |
+| `data/chap05.tex` | 措辞 | 引言表述 "作者已发表文献" 改为 "作者投稿论文" |
+| `CHANGELOG.md` | 追加 | 本次记录 |
+
+### 图片与版权/审稿隐私保护
+- 图片存放路径 `参考资料/ICAIS/...`, `参考资料/TASE_.../`, `参考资料/TAD_2_27/` 均被 `.gitignore` 屏蔽, **不会上传到公开 GitHub**
+- 这样既保证本地编译正常, 又保护: (a) TAD 论文审稿隐私, (b) IEEE 期刊图像版权, (c) 尚未公开的实验细节
+
+### `\graphicspath` 配置
+```latex
+\graphicspath{%
+  {figures/}%                                    % 本文新增或自绘图片
+  {参考资料/ICAIS/hhy-conference_final/hhy-conference/}%
+  {参考资料/TASE_终稿提交版/}%
+  {参考资料/TAD_2_27/}%
+}
+```
+LaTeX 按列表顺序查找图片, 对同名文件 (如三篇论文都有 `usv_model`) 默认使用第一个找到的.
+
+### 编译验证
+- ✅ `build.bat` 两次编译全部通过
+- ✅ `main.pdf` 共 **83 页** (较上一版 79 页增加 4 页, 含新插入图片)
+- ✅ **所有 20+ 张图片均成功加载**, 无 "image not found" 警告
+- ✅ 所有 `\ref`/`\cite` 正确解析, 无 undefined reference
+
+### 保留的占位内容
+- 图 1.2 "本文总体研究框架" 仍为占位 (作者将使用上次提供的提示词自行绘制)
+- 所有实验数据表中的成功率/时间等数值仍为合理占位, 后期按实际论文数据替换
+
+---
