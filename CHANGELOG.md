@@ -133,3 +133,52 @@ xelatex main
 - 章节风格 ("X.1 引言" + 各小节 + "X.X 本章小结") 与上海大学 shuthesis 传统一致
 
 ---
+
+## 2026-04-18 · 第一章绪论全文撰写完成
+
+### 背景
+依据作者要求, 将 `data/chap01.tex` 从占位框架扩写为完整的绪论正文. 内容主要基于作者
+的开题报告《复杂环境下无人船的博弈策略研究》, 并参考了已有学术文献.
+
+### 本次修改清单
+
+| 文件 | 类型 | 说明 |
+|---|---|---|
+| `data/chap01.tex` | 重写 | 完整撰写第一章绪论全文, 约 7000 字 |
+| `CHANGELOG.md` | 追加 | 本次记录 |
+
+### 章节结构
+- **1.1 课题来源** (约 150 字): 国家自然科学基金优秀青年基金项目背景
+- **1.2 研究背景及意义** (约 1200 字): USV 概念与应用、多艇协同趋势、三层面挑战 (载体/环境/博弈)、DRL 作为解决思路
+- **1.3 国内外研究现状** (约 3800 字)
+  - 1.3.1 水面无人艇智能控制研究现状 (国外 MIT/ONR/IST-ISR、国内华科/云洲等)
+  - 1.3.2 无人艇博弈策略研究现状 (确定性/几何/启发式/力/强化学习五类方法)
+  - 1.3.3 多智能体深度强化学习研究现状 (CTDE/MADDPG/MAPPO/注意力机制)
+  - 1.3.4 目标-进攻-防御博弈研究现状 (微分博弈 + RL + 非自杀式研究空白)
+- **1.4 现有研究存在的问题** (约 700 字): 凝练三条核心问题, 每条对应后续一章
+- **1.5 本文主要研究内容与创新点** (约 900 字): 三大工作对应三章 (追逃/围捕/TAD)
+- **1.6 本文组织结构** (约 400 字): 六章逐章概览 + 研究框架图占位
+
+### 引用文献
+第一章共引用 refs.bib 中 24 个文献 key:
+- 综述类: peng2021usv, liao2014usv, jin2018marine, roberts2008marine, drl_2018, su2022confrontation, xia2023cooperativeusv
+- 博弈论: isaacs1999differential, lopez2019multiagent, salimi2019differential, garcia2020multi
+- 几何方法: vonmoll2019multi, ramana2017pursuit, tian2021distributed
+- 启发式/基于力: ni2011bioinspired, fang2022cooperative
+- 强化学习: sutton1998introduction, wangy2020cooperative, lowe2017maddpg, xia2023cooperative, selvakumar2022minmax, yu2022surprising
+- 注意力: vaswani2017attention, iqbal2019maac
+- TAD: garcia2018cooperative, garcia2019target
+
+所有引用均已在 refs.bib 中定义, BibTeX 编译通过, 无 undefined citation.
+
+### 编译验证
+- ✅ `build.bat` 运行成功
+- ✅ main.pdf 共 51 页 (较上一版 43 页新增 8 页, 全部为第一章内容)
+- ✅ 所有参考文献编号正确显示
+- 轻微警告: 几处 underfull hbox 与字体大小替代 (不影响编译, 后期图片/正文填充后自然消失)
+
+### 待后续补充
+- 图 1.1 典型水面无人艇平台示意 (已占位)
+- 图 1.2 本文总体研究框架 (已占位)
+
+---
