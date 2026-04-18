@@ -73,3 +73,31 @@ xelatex main
 ```
 
 ---
+
+## 2026-04-18 · 增加一键编译脚本
+
+### 背景
+应作者要求, 增加双击即用的编译脚本, 避免每次修改后手动输入 4 条命令.
+
+### 本次修改清单
+
+| 文件 | 类型 | 说明 |
+|---|---|---|
+| `build.bat` | 新建 | 完整一键编译: xelatex → bibtex → xelatex → xelatex (不依赖 Perl/latexmk) |
+| `build-watch.bat` | 新建 | 快速单次 xelatex 编译, 撰写时预览用 |
+| `clean-all.bat` | 新建 | 清理全部编译辅助文件 (保留源码与 PDF) |
+
+### 使用方法
+- 每次修改完 `.tex` 文件后, **双击 `build.bat`** 即可生成最新 `main.pdf`
+- 编写阶段可双击 `build-watch.bat` 做快速预览 (仅跑一次 xelatex, 不更新参考文献)
+- 遇到奇怪的编译错误时先双击 `clean-all.bat` 清理再重编
+
+### 首次编译验证
+- ✅ 编译成功, `main.pdf` 共 43 页
+- ✅ 无 undefined reference, 无 BibTeX 致命错误
+- 编译耗时约 20 秒 (含三轮 xelatex + bibtex)
+
+### 说明
+原模板中的 `make-doc.bat` 是用于编译 shuthesis **模板说明文档** `shuthesis.pdf` 的, 与本毕业论文无关, 保留不变.
+
+---
