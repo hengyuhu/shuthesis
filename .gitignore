@@ -220,3 +220,14 @@ TSWLatexianTemp*
 *-tags.tex
 
 *.xdv
+
+## 论文相关：忽略版权敏感与编译产物
+# 师兄/已发表论文/开题报告等参考资料 (含版权，不上传)
+参考资料/
+# 编译生成的最终 PDF
+main.pdf
+# 编辑器与系统文件
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

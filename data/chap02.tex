@@ -1,71 +1,141 @@
 % !Mode:: "TeX:UTF-8"
-\chapter{表格和插图}
-\label{chap:table}
+\chapter{预备知识与理论基础}
+\label{cha:prelim}
 
-\section{表格}
-模板中关于表格的宏包有三个: \pkg{booktabs}、\pkg{array} 和 \pkg{longtabular}. 三线表可
-以用 \pkg{booktabs} 提供的 \cs{toprule}、\cs{midrule} 和 \cs{bottomrule}. 它们与
-\pkg{longtable} 能很好的配合使用.
+\section{引言}
+本章介绍论文所涉及的基础理论知识, 为后续章节的研究提供理论支撑. 首先介绍水面无
+人艇的运动学与动力学模型, 包括坐标系定义、六自由度刚体模型及欠驱动特性分析; 随
+后给出海洋环境扰动的数学建模; 接着介绍本文所涉及的博弈论基础; 最后简要介绍深度
+强化学习中与本文相关的核心算法.
+
+\section{水面无人艇运动学与动力学建模}
+\label{sec:usv_model}
+
+\subsection{参考坐标系与符号定义}
+本文采用大地惯性坐标系 $E_0$ 和船体随动坐标系 $B_0$ 描述水面无人艇的运动. 其中,
+$E_0$ 的原点固连于地面某一点, 三轴分别指向北、东、地下方向; $B_0$ 的原点固连于无
+人艇的质心, 三轴分别指向船首、右舷及船底. 无人艇的六自由度运动变量如
+表~\ref{tab:usv_variables} 所示.
+
 \begin{table}[htb]
   \centering
-  \begin{minipage}[t]{0.8\linewidth}
-    \caption[模板文件]{模板文件}
-    \label{tab:template-files}
-    \begin{tabularx}{\linewidth}{lX}
+  \begin{minipage}[t]{0.9\linewidth}
+    \caption[无人艇坐标变量定义]{水面无人艇六自由度坐标变量定义}
+    \label{tab:usv_variables}
+    \begin{tabularx}{\linewidth}{lXXXXXX}
       \toprule[1.5pt]
-      {\heiti 文件名}  & {\heiti 描述}                                        \\\midrule[1pt]
-      shuthesis.ins & \LaTeX{} 安装文件, \textsc{DocStrip}.\footnote{表格中的脚注} \\
-      shuthesis.dtx & 所有的一切都在这里面.                                        \\
-      shuthesis.cls & 模板类文件.                                             \\
-      shuthesis.cfg & 模板配置文.                                             \\
-      shuthesis.sty & 常用的包和命令.                                           \\
+      {\heiti 运动类型} & 纵荡 & 横荡 & 垂荡 & 横摇 & 纵摇 & 艏摇 \\\midrule[1pt]
+      船体系线/角速度 & $u$ & $v$ & $w$ & $p$ & $q$ & $r$ \\
+      惯性系位置/欧拉角 & $x$ & $y$ & $z$ & $\phi$ & $\theta$ & $\psi$ \\
       \bottomrule[1.5pt]
     \end{tabularx}
   \end{minipage}
 \end{table}
 
-\section{插图}
-论文里插图可使用 \texttt{graphicx} 宏包.
-\begin{figure}[!htbp]
-  \centering
-  \includegraphics[scale=0.3]{shu.pdf}
-  \bicaption{上海大学}{Shanghai University}
-\end{figure}
+\subsection{六自由度运动学模型}
+% 【待填充】
+% 给出位姿向量 η=[P,Θ]=[x,y,z,φ,θ,ψ]^T; 船体系速度 v=[V_b,W_b]^T.
+% R(Θ) 和 T(Θ) 变换矩阵 (见你 ICAIS 论文公式 1-4).
+% 运动学方程 η_dot = J_k(ξ) v.
 
-\begin{figure}[!htbp]
-  \centering
-  \includegraphics[scale=0.2]{shulogo.pdf}
-  \bicaption{上海大学 logo}{Shanghai University logo}
-\end{figure}
+定义无人艇的位姿向量为
+\begin{equation}
+\eta = [\mathbf{P}^T,\, \Theta^T]^T, \quad
+\mathbf{P}=[x,y,z]^T, \quad \Theta=[\phi,\theta,\psi]^T,
+\end{equation}
+船体系下速度向量为
+\begin{equation}
+\bm{v} = [\mathbf{V}_b^T,\, \mathbf{W}_b^T]^T, \quad
+\mathbf{V}_b=[u,v,w]^T,\quad \mathbf{W}_b=[p,q,r]^T.
+\end{equation}
+% 【待填充：R(Θ)、T(Θ) 的完整矩阵表达式，引用 ICAIS 2025 论文公式】
+则水面无人艇的六自由度运动学方程可写为
+\begin{equation}
+\dot{\eta} = J_k(\eta)\,\bm{v}, \quad
+J_k(\eta)=\begin{bmatrix} R(\Theta) & \mathbf{0}_{3\times3} \\ \mathbf{0}_{3\times3} & T(\Theta) \end{bmatrix}.
+\end{equation}
 
+\subsection{欠驱动动力学特性分析}
+% 【待填充】欠驱动 USV 仅可控制纵向推力 τ_u 和艏向力矩 τ_r.
+% 指出 v、w、p、q 分量难以直接控制, 横向运动为耦合产生, 控制器设计难度大.
 
-\newpage
-\section{多子图}
-多子图可使用 \texttt{subcaption} 宏包, 并配合.
+\subsection{海洋环境扰动建模}
+% 【待填充】
+% 风、浪、流三类扰动的数学描述; 等效力/力矩形式; 用于后续算法鲁棒性验证.
 
-\texttt{subcaptionbox} 命令，看第一个子图~\ref{fig:shu1}~和第二个子图~\ref{fig:shu2}.
+\section{博弈论基础}
+\label{sec:game_theory}
 
-\begin{figure}[!htbp]
-  \centering
-  \bisubcaptionbox{上海大学\label{fig:shu1}}{Shanghai University}{
-    \includegraphics[scale=0.3]{shu.pdf}
-  }
-  \bisubcaptionbox{上海大学logo\label{fig:shu2}}{Shanghai University logo}[.4\textwidth]{
-    \includegraphics[scale=0.3]{shulogo.pdf}
-  }
-  \captionsetup{bi-separator=shu-m}
-  \bicaption{\texttt{subcaptionbox} 多子图}{This is a multi-subfigure with \texttt{subcaptionbox} and many many long caption. This is a multi-subfigure with \texttt{subcaptionbox} and many many long caption}
-\end{figure}
+\subsection{微分博弈与 Hamilton-Jacobi-Isaacs 方程}
+% 【待填充】
+% 二人零和微分博弈的代价函数、鞍点解、HJI PDE.
+% 讨论其在追逃博弈中的经典地位, 以及维度灾难问题.
 
+\subsection{马尔可夫博弈}
+% 【待填充】
+% 马尔可夫博弈五元组 (N, S, {A_i}, P, {r_i});
+% 讨论纳什均衡的存在性; 与 MDP 的关系.
 
-\texttt{captionbox} 命令:
+\subsection{部分可观马尔可夫决策过程}
+% 【待填充】
+% POMDP 定义 (S, A, O, P, R, Ω, γ);
+% Dec-POMDP 在多智能体系统中的作用;
+% 部分可观性对策略学习的影响.
 
-\begin{figure}[!htbp]
-  \centering
-  \bicaptionbox{上海大学logo}{Shanghai University logo}[.4\textwidth]{
-    \includegraphics[scale=0.3]{shulogo.pdf}
-  }
-  \bicaptionbox{上海大学}{Shanghai University}{
-    \includegraphics[scale=0.3]{shu.pdf}
-  }
-\end{figure}
+\section{深度强化学习理论}
+\label{sec:drl_theory}
+
+\subsection{强化学习基本概念}
+% 【待填充】
+% 智能体-环境交互; MDP 五元组; 值函数 V(s)、动作-值函数 Q(s,a); Bellman 方程.
+
+\subsection{策略梯度与 Actor-Critic 框架}
+% 【待填充】
+% 策略梯度定理; Actor 更新公式; Critic 更新公式 (TD 误差); 优势函数 A(s,a).
+
+\subsection{近端策略优化算法}
+\label{subsec:ppo}
+近端策略优化算法 (Proximal Policy Optimization, PPO) 是一种适用于连续动作空间的
+基于策略的深度强化学习算法. 通过限制策略更新幅度, PPO 避免了直接信任域策略优化
+中 KL 散度约束所带来的复杂二阶优化问题, 在保证训练稳定性的同时显著提升了训练效
+率. Actor 网络的目标函数为
+\begin{equation}
+L^{\mathrm{CLIP}}(\theta) = \mathbb{E}_t\left[\min\!\left(p_t(\theta)\, A_t,\
+\mathrm{clip}(p_t(\theta),\ 1-\epsilon,\ 1+\epsilon)\, A_t \right)\right],
+\end{equation}
+其中概率比
+\begin{equation}
+p_t(\theta) = \frac{\pi_\theta(a_t\mid s_t)}{\pi_{\theta_{\mathrm{old}}}(a_t\mid s_t)},
+\end{equation}
+$A_t$ 为优势函数, $\epsilon$ 为裁剪范围超参数. Critic 网络的损失函数为
+\begin{equation}
+L^{\mathrm{VF}}(\phi) = \mathbb{E}_t\!\left[(V_\phi(s_t) - V_t^{\mathrm{target}})^2\right].
+\end{equation}
+
+\subsection{多智能体集中训练-分布式执行框架}
+% 【待填充】
+% CTDE 框架思想: 训练时共享全局信息, 执行时各 agent 仅使用局部观测;
+% 解决非平稳性问题, 降低执行阶段通信负担.
+
+\subsection{多智能体近端策略优化算法 MAPPO}
+% 【待填充】
+% 在 PPO 基础上扩展到多智能体场景;
+% Critic 使用全局状态, Actor 使用局部观测;
+% 稍作说明与 MADDPG 的对比优势.
+
+\subsection{软演员-评论家算法 SAC}
+% 【待填充】
+% SAC 最大熵目标 J = E[r + α H(π)];
+% 双 Q 网络与目标 Q 网络; 自动熵权重 α 调节.
+
+\subsection{注意力机制}
+% 【待填充】
+% Scaled Dot-Product Attention 公式;
+% 多头注意力 (Multi-Head Attention) 结构与优势;
+% 残差自注意力 (Residual Self-Attention) 及其在多智能体中的作用.
+
+\section{本章小结}
+本章介绍了本文研究所需的基础理论. 首先给出了水面无人艇的六自由度运动学建模、欠
+驱动特性分析以及海洋环境扰动建模; 其次阐述了微分博弈、马尔可夫博弈与 POMDP 等
+博弈论基础; 最后介绍了 PPO、MAPPO、SAC 等深度强化学习算法及多头注意力等关键
+机制, 为第三至五章的研究提供了理论支撑.

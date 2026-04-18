@@ -1,12 +1,105 @@
+% !Mode:: "TeX:UTF-8"
 % 中英文摘要和关键字
 \begin{cabstract}
-这里是中文摘要.
+水面无人艇 (Unmanned Surface Vehicle, USV) 作为海洋智能装备的重要组成部分,
+在海洋维权、反恐反潜、港口巡逻、海上拦截等军事和民用领域具有极其广泛的应用前景.
+在复杂海洋博弈场景中, 无人艇不仅需要克服自身欠驱动特性和非线性动力学约束, 还需应
+对海洋环境的强扰动、对手策略的不确定性以及多艇协同的高维决策难题. 围绕复杂环境
+下无人艇的博弈策略问题, 本文以欠驱动水面无人艇为研究对象, 结合生物启发思想、威胁
+势场理论与深度强化学习方法, 系统研究了追逃博弈、协同围捕博弈以及目标-进攻-防御
+(Target-Attacker-Defender, TAD) 博弈三类典型博弈任务的策略优化问题, 并在多无人艇
+协同围捕任务中完成了物理平台的实物实验验证. 本文的主要研究内容与创新点如下:
+
+(1) 针对含三维障碍物的复杂环境下欠驱动无人艇追逃博弈问题, 提出一种基于生物启
+发奖励机制的近端策略优化 (Proximal Policy Optimization, PPO) 追逃博弈算法. 首先,
+根据无人艇自身传感器与控制器的输入输出特性, 设计了包含运动观测、环境感知观测与
+扰动观测的三段式观测空间, 增强了算法对未知扰动的适应能力; 其次, 受鲨鱼捕食行为的
+启发, 构建了综合距离逼近、角度对齐与避障惩罚的奖励函数, 有效缓解了稀疏奖励问题;
+最后, 在仿真环境中的实验结果表明, 所提算法能够有效引导追击无人艇在含障碍三维水
+域中实现对逃逸无人艇的稳定追踪与捕获, 具有较强的鲁棒性.
+
+(2) 针对复杂海洋环境下多无人艇协同围捕决策难、收敛慢、围捕判据不清晰等问题,
+提出一种基于威胁势场 (Threat Potential Field, TPF) 与多头注意力机制 (Multi-Head
+Attention, MHA) 的多智能体近端策略优化 (MHD-MAPPO) 协同围捕算法. 首先, 基于无
+边界约束的运动学模型, 给出了协同围捕成功的显式数学判据, 建立了包围区域与逃逸者活
+动区域之间的严格约束关系; 其次, 提出能量波峰 (Energy Crest, EC) 与能量波谷 (Energy
+Trough, ET) 概念, 将围捕过程划分为接近、成型与保持三个阶段, 构造了兼顾避障与协同
+包围的奖励机制; 再次, 在 MAPPO 的 Critic 网络中嵌入多头注意力模块, 以自适应地突
+出关键特征、抑制冗余观测, 显著提升了多艇协同场景下的决策效率; 最后, 除在多艘规模
+下进行仿真验证外, \textbf{本文搭建了多无人艇物理实验平台, 完成了真实水面环境下的
+2 对 1 与 3 对 1 协同围捕实物实验}, 验证了所提算法从仿真到实物的迁移能力和工程可
+实现性.
+
+(3) 针对多无人艇 TAD 博弈中非自杀式防御者策略设计不足、进攻者状态难以预测的问
+题, 提出一种融合时序感知与预测能力的后见经验分配算法 (Time-aware and Prediction-
+based Posthumous Credit Assignment, TP-POCA). 首先, 建立了动态目标护航与静态目
+标固守两阶段任务模型, 系统给出了非自杀式防御者与进攻者的策略约束; 其次, 在策略网
+络中引入残差自注意力模块以实现智能体间的相关性建模, 并利用循环神经网络捕捉历史
+时序特征; 再次, 通过扩展卡尔曼滤波构造进攻者状态预测模块, 使防御者具备超前决策能
+力; 最后, 受鲸群防御行为启发设计了势场化的奖励函数. 大量仿真对比与消融实验表明,
+所提算法在动态与静态目标场景下均取得了更高的防御成功率与稳定性.
+
+综上, 本文围绕复杂环境下无人艇博弈策略这一核心问题, 系统提出了从单艇追逃、多
+艇协同围捕到 TAD 目标防御的完整博弈策略解决方案, 部分算法已通过物理实验验证其
+工程可行性, 为欠驱动无人艇在海上博弈对抗中的智能化决策提供了理论方法与实践支撑.
 \end{cabstract}
 
-\ckeywords{\TeX, \LaTeX, 模板, 论文}
+\ckeywords{水面无人艇; 博弈策略; 深度强化学习; 多头注意力机制; 威胁势场; 目标-进攻-防御博弈}
 
 \begin{eabstract}
-Abstract in English.
+Unmanned Surface Vehicles (USVs), as a pivotal component of intelligent maritime
+equipment, exhibit extensive application potential in both military and civilian
+domains, including maritime rights protection, anti-submarine warfare, harbor
+patrolling, and maritime interception. In complex maritime game scenarios, USVs
+must not only overcome their inherent underactuated dynamics and nonlinear
+constraints, but also cope with strong environmental disturbances, adversarial
+uncertainty, and high-dimensional decision-making challenges arising from multi-USV
+cooperation. Focusing on the game strategy problem of USVs in complex environments,
+this thesis investigates three representative game tasks for underactuated USVs:
+pursuit-evasion, cooperative hunting, and Target-Attacker-Defender (TAD) games,
+by integrating bio-inspired design, threat potential field theory, and deep
+reinforcement learning. In addition, the proposed cooperative hunting strategy is
+further validated through physical experiments on a multi-USV testbed. The main
+contributions are summarized as follows:
+
+(1) For the pursuit-evasion problem of underactuated USVs in cluttered
+three-dimensional environments, a bio-inspired Proximal Policy Optimization (PPO)
+algorithm is proposed. An observation space comprising motion, environmental
+perception, and disturbance components is designed to strengthen adaptability to
+unknown marine disturbances. Inspired by shark predation behavior, a composite
+reward function integrating distance, heading-alignment, and obstacle avoidance
+terms is constructed to alleviate the sparse-reward problem. Simulation results
+demonstrate the robustness and effectiveness of the proposed method.
+
+(2) To address decision-making difficulty, slow convergence, and unclear capture
+criteria in cooperative hunting for multi-USV systems, a Multi-Head attention
+Distributed MAPPO (MHD-MAPPO) algorithm together with a threat potential field
+(TPF)-based reward scheme is proposed. An explicit mathematical criterion of
+successful encirclement is established. The concepts of Energy Crest (EC) and
+Energy Trough (ET) are introduced to partition the hunting process into three
+stages, forming the basis of the TPF reward mechanism. A multi-head attention
+module is further embedded into the Critic network of MAPPO to adaptively
+emphasize informative features. Beyond numerical simulations, \textbf{a multi-USV
+physical platform is developed and real-world 2-versus-1 and 3-versus-1 hunting
+experiments are successfully performed}, verifying the Sim-to-Real transferability
+and engineering feasibility of the proposed strategy.
+
+(3) For the TAD game problem under the non-suicidal constraint, a Time-aware and
+Prediction-based Posthumous Credit Assignment (TP-POCA) algorithm is proposed. A
+two-stage TAD model (dynamic escorting and static defending) is established.
+Residual self-attention is used for inter-agent relevance modeling, while recurrent
+structures are leveraged to capture temporal dependencies. An Extended Kalman
+Filter-based prediction module is introduced to anticipate attackers' future
+states. A whale-inspired potential-field-based reward function is designed.
+Extensive simulations and ablation studies demonstrate superior defense success
+rates and stability.
+
+In summary, this thesis provides a systematic set of game strategy solutions for
+underactuated USVs in complex environments, ranging from single-USV
+pursuit-evasion, multi-USV cooperative hunting (with physical validation), to TAD
+target defense, offering both theoretical foundations and engineering insights for
+intelligent decision-making of USVs in maritime adversarial scenarios.
 \end{eabstract}
 
-\ekeywords{\TeX, \LaTeX, Template, Thesis}
+\ekeywords{Unmanned Surface Vehicle; Game Strategy; Deep Reinforcement Learning;
+Multi-Head Attention; Threat Potential Field; Target-Attacker-Defender Game}

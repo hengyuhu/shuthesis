@@ -1,119 +1,161 @@
 % !Mode:: "TeX:UTF-8"
-\chapter{数学和定理环境}
-\label{cha:theorem}
-\section{数学宏包}
-\LaTeX\ 最擅长处理的就是数学公式, \shuthesis\ 已经预加载了常用的数学宏包, 包括:
-\begin{itemize}
-\item 美国数学学会系列宏包: \texttt{amsmath}, \texttt{amssymb}, \texttt{amsfonts}.
-\item 生成英文花体的宏包: \texttt{mathrsfs}.
-\item 数学公式中的黑斜体的宏包: \texttt{bm}.
-\item AMS 的补充宏包: \texttt{mathtools}.
-\end{itemize}
+\chapter{基于生物启发强化学习的无人艇追逃博弈策略}
+\label{cha:pe}
 
-\section{定理类环境}
-给大家演示一下 \shuthesis\ 预定义的各种定理类环境.
+\section{引言}
+追逃博弈 (Pursuit-Evasion, PE) 是无人艇博弈中最基础也是最具代表性的任务之一. 在
+追逃博弈中, 追击者希望在有限时间内捕获逃逸者, 而逃逸者则试图持续远离追击者以避免
+被捕获. 含三维障碍物与环境扰动的复杂海洋环境进一步加剧了追逃决策的难度: 无人艇
+的欠驱动特性限制了其机动能力, 不规则分布的障碍物要求追击者同时完成避障与追踪,
+而海面环境扰动使得精确建模和传统最优控制方法难以适用.
 
-\subsection{\shuthesis\ 预定义的定理类环境}
-\begin{assumption}
-天地玄黄, 宇宙洪荒, 日月盈昃, 辰宿列张.
-\end{assumption}
+针对上述问题, 本章基于近端策略优化算法, 提出一种融合传感器与控制器输入信息的观
+测空间以及受鲨鱼捕食行为启发的奖励机制, 构建了欠驱动 USV 的追逃博弈策略. 本章内
+容是作者在文献~\cite{hu2025bioinspired} 基础上整理扩展而成.
 
-\begin{definition}
-寒来暑往, 秋收冬藏, 闰余成岁, 律吕调阳.
-\end{definition}
+\section{三维复杂环境下无人艇追逃问题描述}
+\label{sec:pe_problem}
 
-\begin{proposition}
-云腾致雨, 露结为霜, 金生丽水, 玉出昆冈.
-\end{proposition}
+\subsection{场景设定}
+% 【待填充】
+% 博弈发生在一个有界的三维水域中, 含不规则障碍物.
+% 追击者 P 试图接近逃逸者 E 至 R_safe 以内, E 则尝试最大化与 P 的距离.
+% 对比参考 ICAIS 论文 Section II-A.
 
-\begin{remark}
-天不言自高, 水不言自流.
-\end{remark}
+\subsection{基本假设}
+为便于后续策略设计, 给出如下假设:
 
-\begin{axiom}
-两点间直线段距离最短.  
-\end{axiom}
+\textbf{假设 3.1.} 逃逸者的位置信息可由追击者通过长距离探测设备 (如导引雷达、声学
+追踪装置等) 获取, 除此之外, 其他环境信息仅通过自身传感器获得.
 
-\begin{lemma}
-证明如下等式:
-\[
-\sum_{n=1}^{\infty}\frac{n-1}{\binom{2n}{n}}=\frac{1}{3}.
-\]
-\end{lemma}
+\textbf{假设 3.2.} 追击者与逃逸者的机载传感器均能够实时、准确地获取自身的运动状态
+与周围环境数据.
 
-\begin{proof}
-注意到下面的恒等式:
-\[
-\frac{1}{\binom{2n}{n}}=(2n+1)\int_0^1[x(1-x)]^n\,dx,
-\]
-和
-\[
-\sum_{n=1}^{\infty}(2n+1)(n-1)y^n=\frac{(y-5)y^2}{(y-1)^3}.
-\]
-记 $y=x(1-x)$, 则
-\[
-\sum_{n=1}^{\infty}(2n+1)(n-1)x^n(1-x)^n=\frac{(x-x^2-5)(x-x^2)^2}{(x-x^2-1)^3}.
-\]
-所以有
-\begin{align*}
-\sum_{n=1}^{\infty}\frac{n-1}{\binom{2n}{n}} & =
-\int_0^1\left[\sum_{n=1}^{\infty}(2n+1)(n-1)x^n(1-x)^n\right]dx\\
-& =\int_0^1\frac{(x-x^2-5)(x-x^2)^2}{(x-x^2-1)^3}dx=\frac13.
-\end{align*}
-\end{proof}
+\subsection{软捕获判据}
+定义追击者成功捕获逃逸者的条件为
+\begin{equation}
+\| \mathbf{p}_P - \mathbf{p}_E \| \le R_{\mathrm{safe}},
+\label{eq:soft_capture}
+\end{equation}
+其中 $\mathbf{p}_P, \mathbf{p}_E$ 分别表示追击者与逃逸者的位置, $R_{\mathrm{safe}}$
+为软捕获半径.
 
-\begin{theorem}\label{the:theorem1}
-一元五次方程没有一般的代数解.
-\end{theorem}
+\section{追逃博弈的马尔可夫决策过程建模}
+\label{sec:pe_mdp}
 
-\begin{corollary}
-这是推论环境.
-\end{corollary}
+\subsection{动作空间设计}
+考虑到无人艇的欠驱动性质, 追击者的动作空间设计为归一化后的纵向速度与艏向角速
+度:
+\begin{equation}
+\mathcal{A} = \{u,\, r\},
+\end{equation}
+两个控制量均在 $[-1,1]$ 范围内取值, 再通过线性映射还原到其物理范围.
 
-\begin{example}
-大家来看一个例子.
-\end{example}
+\subsection{观测空间设计}
+为增强追击者在复杂海洋环境下的感知能力, 本文将观测空间 $\mathcal{O}$ 设计为三个部
+分的组合:
+\begin{equation}
+\mathcal{O} = \{\mathcal{O}_{\mathrm{motion}},\ \mathcal{O}_{\mathrm{env}},\ \mathcal{O}_{\mathrm{dis}}\}.
+\end{equation}
 
-\begin{exercise}
-设 $a_i\geq0$, $b_i\geq0$, $i=1$, $2$, $\ldots$, $n$, 
-且 $p>1$, $q>1$ 满足 $1/p+1/q=1$. 证明
-\[
-\sum_{i=1}^{n}a_ib_i\leq\left(\sum_{i=1}^{n}a_i^p\right)^{1/p}
-\cdot\left(\sum_{i=1}^{n}b_i^q\right)^{1/q},
-\]
-等号成立当且仅当 $a_i^p=cb_i^q$.
-\end{exercise}
+\subsubsection{运动观测}
+% 【待填充】
+% O_motion = {v_P, θ_P}, v_P = {u,v,w}, θ_P = {φ,θ,ψ}.
 
-\begin{problem}
-回答还是不回答, 是个问题. 
-\end{problem}
+\subsubsection{环境感知观测}
+% 【待填充】
+% O_env = {P^E, L}, 其中 P^E 是逃逸者的位置, L = [L1,...,L_N] 是 N 维激光雷达数据.
+% 解释分段式激光雷达观测的避障作用.
 
-\newpage
-\section{算法伪代码环境}
+\subsubsection{扰动观测}
+% 【待填充】
+% O_dis 用于显式表征风浪流扰动, 作为本章创新点之一.
+% 可由控制器的控制误差或状态观测器推断得到, 提升算法鲁棒性.
 
-使用 \texttt{algorithm2e} 宏包, 看看这个例子算法~\ref{algo:algo1}.
+\subsection{奖励函数设计}
+% 【待填充概述】奖励函数受鲨鱼捕食行为启发, 包括距离接近、角度对齐与避障惩罚三部分.
+
+\subsubsection{距离接近奖励}
+% 【待填充】
+% r_dist 与追-逃距离的相对变化挂钩, 模拟鲨鱼追踪猎物的接近行为.
+
+\subsubsection{角度对齐奖励}
+% 【待填充】
+% r_angle 鼓励追击者将艏向对准逃逸者, 模拟鲨鱼向猎物侧翼切入的攻击姿态.
+
+\subsubsection{避障与越界惩罚}
+% 【待填充】
+% r_obs 基于激光雷达最小距离给出连续惩罚;
+% 越出作战水域或发生碰撞时给予大负奖励.
+
+\section{基于PPO的追逃博弈算法}
+\label{sec:pe_algorithm}
+
+\subsection{策略网络与价值网络}
+% 【待填充】
+% Actor: MLP/CNN 编码观测 -> 输出动作分布 (高斯策略); 
+% Critic: 编码观测 -> 输出状态值 V(s);
+% 提供网络结构图示意.
+
+\subsection{训练流程}
+% 【待填充】
+% 经验收集 -> 优势估计 (GAE) -> Actor/Critic 更新 -> 策略迭代.
 
 \begin{algorithm}[!htbp]
-  \caption{强化学习算法}
-  \label{algo:algo1}
+  \caption{基于生物启发 PPO 的无人艇追逃博弈算法}
+  \label{algo:bio_ppo}
   \DontPrintSemicolon
-  \SetKwFor{Forever}{loop}{forever}{end}
-  \SetKw{In}{in}
   \SetKwInOut{Input}{输入}
   \SetKwInOut{Output}{输出}
-  \SetKwFunction{EnvReset}{Env.reset}
-  \SetKwFunction{EnvStep}{Env.step}
-  \vspace{5pt}
-
-  \Input{策略参数$\phi$,\ 经验池$\mathcal{D}$}
-  \Output{$\phi$}
-
-  $o_t \leftarrow \EnvReset()$\;
-  \Forever(\tcp*[f]{迭代}){iteration}{
-    \While(\tcp*[f]{环境交互与训练时间步}){$t<T$}{
-      $a_t\sim \pi_\phi(a_t|o_t)$ \tcp*[r]{从策略中生成动作}
-      $(r_t,o_{t+1}) \leftarrow \EnvStep(o_t,a_t)$ \tcp*[r]{与环境交互}
-      $\mathcal{D} \leftarrow \mathcal{D} \cup \{(o_t,a_t,r_t,o_{t+1})\}$ \tcp*[r]{填充经验池}
+  \Input{Actor 参数 $\theta$, Critic 参数 $\phi$, 经验池 $\mathcal{D}$, 裁剪范围 $\epsilon$, 折扣因子 $\gamma$}
+  \Output{训练完成的策略 $\pi_\theta$}
+  初始化 Actor 与 Critic 网络参数\;
+  \For{迭代 $k = 1,2,\ldots,K$}{
+    使用 $\pi_{\theta_{\mathrm{old}}}$ 与环境交互收集轨迹 $\tau$\;
+    基于生物启发奖励函数计算即时奖励 $r_t$\;
+    使用 GAE 计算优势 $A_t$ 与目标值 $V_t^{\mathrm{target}}$\;
+    \For{迭代轮次 $e = 1,\ldots,E$}{
+      以 $L^{\mathrm{CLIP}}(\theta)$ 更新 Actor 参数 $\theta$\;
+      以 $L^{\mathrm{VF}}(\phi)$ 更新 Critic 参数 $\phi$\;
     }
+    同步 $\theta_{\mathrm{old}} \leftarrow \theta$\;
   }
 \end{algorithm}
+
+\section{仿真实验与结果分析}
+\label{sec:pe_exp}
+
+\subsection{仿真平台与参数设置}
+% 【待填充】
+% 基于 Unity + Python 的三维仿真环境, 描述水域大小、障碍物布局、USV 参数;
+% 给出训练超参数表 (学习率、批大小、迭代次数、γ、ε、熵系数等).
+
+\subsection{训练收敛性分析}
+% 【待填充】
+% 平均 episode 奖励曲线、捕获成功率曲线; 与基线算法对比.
+% \begin{figure}[占位] 训练曲线 \end{figure}
+
+\subsection{典型追逃场景测试}
+% 【待填充】
+% 轨迹可视化 (至少 2-3 个典型初始条件);
+% 分析追击者避障、转向与最终捕获过程.
+% \begin{figure}[占位] 轨迹图 \end{figure}
+
+\subsection{环境扰动下的鲁棒性验证}
+% 【待填充】
+% 在不同扰动强度下 (弱/中/强) 统计 100 次试验的成功率与捕获时间.
+% \begin{table}[占位] 鲁棒性对比表 \end{table}
+
+\subsection{与基线方法对比}
+% 【待填充】
+% 与 DDPG、SAC、以及不含扰动观测的 PPO 方法进行对比, 验证扰动观测与生物启发奖励
+% 的有效性.
+% \begin{figure}[占位] 对比柱状图 \end{figure}
+
+\section{本章小结}
+本章针对含三维障碍物与环境扰动的复杂水域下欠驱动无人艇追逃博弈问题, 首先给出了
+追逃博弈的问题描述与软捕获判据; 然后设计了包含运动观测、环境感知观测与扰动观测
+的三段式观测空间, 提出了受鲨鱼捕食行为启发的复合奖励函数; 接着基于近端策略优化
+算法构建了完整的追逃博弈策略训练流程; 最后通过多组仿真实验验证了所提算法在不同
+扰动条件与典型场景下的追击性能和鲁棒性. 本章工作为后续多无人艇协同围捕研究提供
+了单艇追逃能力的基础.

@@ -1,3 +1,11 @@
+# dissertation_master
+
+本仓库为个人硕士学位论文工程，排版基于上海大学 **ShuThesis** LaTeX 模板。若需在 GitHub 上使用同名仓库，可在网站上新建 `dissertation_master` 后执行：
+
+`git remote set-url origin https://github.com/<你的用户名>/dissertation_master.git`
+
+---
+
 # What's ShuThesis?
 ShuThesis is a LaTeX thesis template package for Shanghai University supporting master, doctor. 
 Since the users of this package are supposed to be Chinese or those understand Chinese, the following of this file and all other documents are written in Chinese only.
