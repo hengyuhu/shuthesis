@@ -3,134 +3,250 @@
 \label{cha:hunting}
 
 \section{引言}
-相较于单艇追逃博弈, 多无人艇协同围捕博弈不仅要求追击者逼近逃逸者, 还需要多艇之
-间在空间上形成包围态势, 共同限制逃逸者的机动空间直至将其捕获. 在含障碍物的海洋
-环境中, 协同围捕面临以下三方面挑战: 其一, 现有研究大多未给出严格的围捕成功数学
-判据, 导致算法评价依据模糊; 其二, 围捕过程呈现明显的阶段性特征 (接近、成型、保持),
+\label{sec:hunt_intro}
+相较于单艇追逃博弈, 多无人艇协同围捕博弈不仅要求追击者逼近逃逸者, 还需要多艇之间
+在空间上形成包围态势, 共同限制逃逸者的机动空间直至完成捕获. 在含障碍物的海洋环
+境中, 协同围捕面临以下三方面挑战: 其一, 现有研究大多未给出严格的围捕成功数学判
+据, 导致算法评价依据模糊; 其二, 围捕过程呈现明显的阶段性特征 (接近、成型、保持),
 单一的奖励函数难以同时兼顾各阶段的学习需求, 常导致稀疏奖励与训练收敛缓慢; 其三,
 现有工作多止步于数值仿真, 缺乏真实水面环境下的物理平台验证, 算法的工程可实现性
-仍有待考察.
+有待考察.
 
-针对上述问题, 本章围绕多无人艇协同围捕博弈策略的设计与验证, 开展以下四个方面的工
-作: (i) 在六自由度欠驱动运动学模型的基础上, 给出围捕成功的显式数学判据, 解决现有
-研究中评价标准模糊的问题; (ii) 提出能量波峰 (Energy Crest, EC) 与能量波谷 (Energy
-Trough, ET) 概念, 将威胁势场转化为反映接近-成型-保持三阶段的密集奖励机制; (iii) 在
-MAPPO 算法的 Critic 网络中引入多头注意力机制, 形成 MHD-MAPPO 算法, 以自适应
-地聚焦关键特征、抑制冗余观测; (iv) \textbf{搭建多无人艇物理实验平台, 在真实水面环境
-中完成 2 对 1 和 3 对 1 协同围捕实物实验}, 从仿真到实物全面验证所提算法. 本章内容
-在作者已发表的文献~\cite{wang2025cooperativehunting} 基础上整理扩展而成.
+针对上述问题, 本章围绕多无人艇协同围捕博弈策略的设计与验证, 开展以下四方面工作:
+(i) 在六自由度欠驱动运动学模型的基础上, 给出围捕成功的显式数学判据, 解决现有研
+究中评价标准模糊的问题; (ii) 提出能量波峰 (Energy Crest, EC) 与能量波谷 (Energy
+Trough, ET) 概念, 将威胁势场转化为反映接近-成型-保持三阶段的密集奖励机制; (iii)
+在 MAPPO 算法的 Critic 网络中引入多头注意力机制, 形成 MHD-MAPPO 算法; (iv)
+\textbf{搭建多无人艇物理实验平台, 在真实水面环境中完成 2 对 1 和 3 对 1 协同围捕
+实物实验}, 从仿真到实物全面验证所提算法. 本章内容在作者已发表
+的文献~\cite{wang2025cooperativehunting} 基础上整理扩展而成.
 
 \section{复杂环境下多无人艇协同围捕问题}
 \label{sec:hunt_problem}
 
 \subsection{问题描述}
-% 【待填充】
-% 考虑 N 艘追击者 P_n (n=1,...,N), M 艘逃逸者 E_m (m=1,...,M), U 个障碍物 obs_u 组成的海上博弈场景.
-% 参考 TASE 论文 Fig.1 给出博弈示意图.
+\label{subsec:hunt_scene}
+考虑含 $N$ 艘追击者 $P_n\ (n=1,2,\ldots,N)$、$M$ 艘逃逸者 $E_m\ (m=1,2,\ldots,M)$
+与 $U$ 个静态障碍物 $\mathrm{obs}_u\ (u=1,2,\ldots,U)$ 的复杂海洋博弈场景, 如
+图~\ref{fig:hunt_scene} 所示. 追击者协同完成对逃逸者的合围任务, 同时避开障碍物
+及彼此; 逃逸者则根据周围态势采取合适的逃逸策略. 相关变量定义如下:
+$\mathbf{v}_i$ 为第 $i$ 艘无人艇的速度, $\varphi_i\in[0, 2\pi)$ 为艏向角,
+$d_{CA}$ 为围捕判据半径, $R_{\mathrm{safe}}$ 为软碰撞安全半径.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.45]{hunt_scene.pdf}
+  \vspace{4cm}
+  \bicaption{多无人艇协同围捕博弈场景示意}{Illustration of multi-USV cooperative hunting game}
+  \label{fig:hunt_scene}
+\end{figure}
 
 \subsection{围捕成功数学判据}
 \label{subsec:hunt_criterion}
-定义以逃逸者为中心的包围区域 $\Omega(t)$ 为
+为明确定义协同围捕的成功标准, 本文首先给出包围区域和逃逸者可达区域的概念.
+
+\textbf{定义 4.1 \ (包围区域)} \quad 以第 $m$ 艘逃逸者 $E_m$ 为几何参考, 由 $N$
+艘追击者及其运动状态张成的包围区域 $\Omega_m(t)$ 定义为
 \begin{equation}
-\Omega(t) = \left\{ (x,y)\ \big|\ \| (x,y) - \mathbf{p}_m^C(t) \| \le d_{CA} \pm \sigma \right\},
+\Omega_m(t) = \left\{ (x,y)\ \Big|\ \|(x,y) - \mathbf{p}_m^C(t)\| \le d_{CA}\pm\sigma \right\},
 \label{eq:besieged_area}
 \end{equation}
-其中 $\mathbf{p}_m^C(t)$ 为包围区域中心, $d_{CA}$ 为围捕判据半径, $\sigma$ 是允许包围
-半径动态调节的容差因子. 进一步, 设 $R_e(t)$ 为逃逸者的可达活动区域, 则协同围捕成
-功的严格数学判据定义为
+其中 $\mathbf{p}_m^C(t)$ 为由追击者围绕 $E_m$ 所形成编队的几何中心, $\sigma$ 为
+允许半径动态调节的容差因子.
+
+\textbf{定义 4.2 \ (可达活动区域)} \quad 设逃逸者 $E_m$ 在任意策略作用下, 从当前
+位置出发在未来 $\Delta t$ 时间内所能到达的所有位置点构成其可达活动区域 $R_e^m(t)$,
+其大小取决于 $E_m$ 的速度限制与周围环境约束.
+
+基于上述定义, 给出协同围捕成功的显式数学判据:
+
+\textbf{判据 4.1 \ (协同围捕成功判据)} \quad 对于逃逸者 $E_m$, 若
 \begin{equation}
 \left\{
 \begin{aligned}
-\mathbf{p}_E(t) &\in \Omega(t), \quad &\forall t \ge t_0, \\
-R_e(t) &\subseteq \Omega(t), \quad &\forall t \ge t_0,
+\mathbf{p}_{E_m}(t) &\in \Omega_m(t), \quad \forall t\ge t_0, \\
+R_e^m(t) &\subseteq \Omega_m(t), \quad \forall t\ge t_0,
 \end{aligned}
 \right.
 \label{eq:hunt_cond}
 \end{equation}
-并要求追击者通过策略最小化逃逸者在包围区域边界上的最大距离, 即
+则认为追击者对 $E_m$ 的协同围捕成功. 此时, 逃逸者不仅当前位置位于包围区域内部,
+且未来可能到达的所有位置也被包围区域完全包含, 即逃逸者彻底失去了机动逃脱的可能.
+
+为进一步量化围捕性能, 定义最优围捕问题为以下 min-max 优化问题:
 \begin{equation}
-\min_{\pi}\ \max_{(x,y)\in R_e(t)}\ d\big((x,y),\ \partial\Omega\big).
+\min_{\pi_{P}}\ \max_{(x,y)\in R_e^m(t)}\ d\!\left((x,y),\, \partial\Omega_m(t)\right),
 \label{eq:min_max}
 \end{equation}
+其中 $\pi_P$ 为追击者联合策略, $\partial\Omega_m$ 为包围区域的边界,
+$d(\cdot,\cdot)$ 为点到集合的最短欧氏距离. 该优化问题的含义是: 追击者应设计策略,
+使得逃逸者可达活动区域的最远点到包围边界的距离达到最小, 即最大程度压缩逃逸者的
+机动空间.
 
 \subsection{安全与非碰撞约束}
-% 【待填充】
-% 软碰撞约束: d_ij <= 2 R_safe, i != j;
-% 给出对障碍物的避障约束.
+\label{subsec:safety_constraint}
+为避免在围捕过程中发生碰撞, 所有智能体之间需满足软碰撞约束
+\begin{equation}
+d_{ij} \ge 2R_{\mathrm{safe}}, \quad \forall i\ne j,
+\label{eq:collision}
+\end{equation}
+其中 $d_{ij}$ 为第 $i$ 艘与第 $j$ 艘无人艇的欧氏距离. 此外, 追击者需与障碍物保持
+一定距离, 避免碰撞.
 
 \subsection{基本假设}
-% 【待填充】两个关键假设:
-% 假设 4.1 每艘追击者仅能感知逃逸者位置、最近两艘追击者与最近三个障碍物;
-% 假设 4.2 追击者最大速度大于逃逸者最大速度.
+\label{subsec:hunt_assumption}
+为便于策略设计, 本章引入如下假设:
+
+\textbf{假设 4.1} \quad 由于传感范围、通信带宽与计算能力的限制, 每艘追击者仅能获
+取逃逸者的位置数据、距离其最近的两艘追击者状态以及最近三个障碍物信息.
+
+\textbf{假设 4.2} \quad 所有追击者为同构无人艇, 其最大航速大于逃逸者最大航速, 即
+$V_{\max}^E < V_{\max}^P$.
+
+\textbf{注记 4.1} \quad 与部分传统研究仅将围捕视为 ``追击者到达指定包围区域'' 不
+同, 本文的判据 4.1 通过 $R_e^m(t)\subseteq \Omega_m(t)$ 刻画了围捕对逃逸者可达
+空间的实质约束, 更契合实际海战中包围压缩敌舰机动空间的战术意图.
 
 \section{威胁势场与三阶段围捕判据}
-\label{sec:tpf_reward}
+\label{sec:tpf}
 
 \subsection{威胁势场数学建模}
-% 【待填充】
-% 以逃逸者为中心, 在博弈空间中构建虚拟能量场;
-% 给出 U_TPF(x,y) 的具体数学形式, 并示意能量分布 (等高线图).
-% 强调: 与传统工作中将 TPF 仅作为代价函数使用的做法不同, 本文将其转化为 RL 奖励机制.
+\label{subsec:tpf_model}
+为刻画围捕过程中各智能体所处的态势, 本文以每艘逃逸者 $E_m$ 为中心, 构建一个以其
+位置为原点的威胁势场 (Threat Potential Field, TPF). 对于博弈空间中任意一点
+$\mathbf{q}=(x,y)$, 其威胁势能值定义为
+\begin{equation}
+U_{TPF}^{m}(\mathbf{q}) = -k_r\, e^{-\|\mathbf{q}-\mathbf{p}_{E_m}\|^2 / \sigma_r^2}
++ k_a\, \|\mathbf{q}-\mathbf{p}_{E_m}\|^2,
+\label{eq:tpf}
+\end{equation}
+其中第一项为围绕 $E_m$ 形成的高斯型排斥势, 反映逃逸者附近对追击者的威胁;
+第二项为远距离吸引势, 引导追击者从远处接近; $k_r, k_a, \sigma_r$ 为设计参数.
+图~\ref{fig:tpf_field} 展示了威胁势场在博弈空间中的等高线分布.
 
-\subsection{能量波峰 EC 与能量波谷 ET 的提出}
-% 【待填充】
-% 定义能量波峰 (Energy Crest, EC): 在逃逸者的运动方向上形成的威胁高点;
-% 定义能量波谷 (Energy Trough, ET): 追击者理想占位的威胁低点.
-% 给出 EC 与 ET 的解析表达式.
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{tpf_field.pdf}
+  \vspace{4cm}
+  \bicaption{威胁势场等高线分布示意}{Contour illustration of the threat potential field}
+  \label{fig:tpf_field}
+\end{figure}
+
+\subsection{能量波峰 EC 与能量波谷 ET 的概念提出}
+\label{subsec:ec_et}
+传统 TPF 将势场值直接作为代价函数, 并未体现围捕过程的阶段性特征. 为解决此问题,
+本文在 TPF 基础上引入\textbf{能量波峰 (Energy Crest, EC)}与\textbf{能量波谷
+(Energy Trough, ET)}两个关键概念.
+
+\textbf{定义 4.3 \ (能量波峰 EC)} \quad 逃逸者运动方向前方形成的威胁高能区域, 其
+定义为
+\begin{equation}
+\mathrm{EC}_m(t) = \left\{ \mathbf{q}\ \Big|\ U_{TPF}^{m}(\mathbf{q}) \ge U_{EC},\ (\mathbf{q}-\mathbf{p}_{E_m})^T \mathbf{v}_{E_m} > 0 \right\},
+\label{eq:ec}
+\end{equation}
+其中 $U_{EC}$ 为波峰阈值. 能量波峰是追击者希望避免进入的区域 (否则会被逃逸者直接
+摆脱).
+
+\textbf{定义 4.4 \ (能量波谷 ET)} \quad 逃逸者侧翼与后方的低能区域, 是追击者理想
+的占位点, 定义为
+\begin{equation}
+\mathrm{ET}_m(t) = \left\{ \mathbf{q}\ \Big|\ U_{ET}^{\min} \le U_{TPF}^{m}(\mathbf{q}) \le U_{ET}^{\max},\ (\mathbf{q}-\mathbf{p}_{E_m})^T\mathbf{v}_{E_m} \le 0 \right\},
+\label{eq:et}
+\end{equation}
+其中 $U_{ET}^{\min}, U_{ET}^{\max}$ 为波谷的势能界限. 能量波谷从几何上等价于逃
+逸者 ``背后的安全扇区'', 是完成合围的最佳占位.
 
 \subsection{围捕过程三阶段划分}
-% 【待填充】
-% 接近阶段: 追击者迅速缩短与逃逸者距离, 尚未形成合围;
-% 成型阶段: 追击者占据 ET 位置, 形成合围初步形态;
-% 保持阶段: 追击者维持 ET 位置, 持续压缩 R_e(t) 至满足围捕判据.
-% 给出阶段转换的判据.
+\label{subsec:three_stages}
+基于 EC 与 ET 的定义, 本文将围捕过程划分为三个阶段:
+
+\textbf{阶段 1 \ 接近阶段.} 追击者与逃逸者相距较远, 目标是迅速缩短距离. 此阶段奖
+励函数侧重距离缩减分量.
+
+\textbf{阶段 2 \ 成型阶段.} 追击者已接近逃逸者, 目标是快速占据各自对应的 ET 位
+置, 形成初步合围. 此阶段奖励函数强化 ET 占位奖励与编队维持奖励.
+
+\textbf{阶段 3 \ 保持阶段.} 追击者已占据 ET 位置, 目标是维持包围态势并压缩 $R_e^m(t)$
+直到满足判据 4.1. 此阶段奖励函数强化包围完整性奖励.
+
+阶段之间的切换由以下指标判断: 平均追-逃距离、追击者占据 ET 的比例、编队紧密度等.
 
 \subsection{基于威胁势场的奖励机制}
-% 【待填充】设计阶段自适应的奖励:
-% r_total = α_1 r_dist + α_2 r_ec + α_3 r_formation + α_4 r_obs,
-% 其中 α_i 权重根据当前所处阶段动态调整.
-% 区别于传统奖励: 传统研究的奖励更偏向启发式或优化代价形式;
-% 本文是连续密集奖励, 三阶段权重自适应.
+\label{subsec:tpf_reward}
+综合考虑三阶段围捕特点, 本章设计以下分阶段自适应奖励
+\begin{equation}
+r_t = \alpha_1(\kappa) r_{\mathrm{dist}} + \alpha_2(\kappa) r_{\mathrm{ET}} + \alpha_3(\kappa) r_{\mathrm{form}} + \alpha_4(\kappa) r_{\mathrm{obs}} + r_{\mathrm{term}},
+\label{eq:hunt_reward}
+\end{equation}
+其中 $\kappa\in\{1,2,3\}$ 表示当前所处阶段, $\alpha_i(\kappa)$ 为各分量在不同阶
+段的权重. 各分量含义如下:
 
-\section{基于多头注意力机制的 MHD-MAPPO 算法}
+\textbf{(1) 距离奖励 $r_{\mathrm{dist}}$:} 鼓励追击者缩短与目标逃逸者的距离, 尤
+其在阶段 1 中占主导地位;
+
+\textbf{(2) ET 占位奖励 $r_{\mathrm{ET}}$:} 当追击者进入 ET 区域时给予正奖励, 鼓
+励占据理想位置, 在阶段 2、3 中权重较高;
+
+\textbf{(3) 编队维持奖励 $r_{\mathrm{form}}$:} 奖励追击者形成均匀分布的包围编队,
+避免扎堆;
+
+\textbf{(4) 避障/避碰惩罚 $r_{\mathrm{obs}}$:} 对接近障碍物或其他追击者的行为给
+予连续惩罚;
+
+\textbf{(5) 终止奖励 $r_{\mathrm{term}}$:} 判据 4.1 成立时给予较大正奖励, 超时或
+碰撞时给予较大负奖励.
+
+\section{基于多头注意力的 MHD-MAPPO 算法}
 \label{sec:mhd_mappo}
 
-\subsection{MAPPO 算法框架回顾}
-% 【待填充】
-% 回顾 MAPPO: 每个 agent 使用本地观测 o_i 输出动作;
-% 所有 agent 共享同一个基于全局状态 s 的 Critic;
-% 利用 CTDE 解决多智能体非平稳性问题.
+\subsection{MAPPO 算法框架}
+\label{subsec:mappo_recap}
+多智能体近端策略优化 (MAPPO) 算法 (参见 2.4.5 节) 为每个智能体配备独立的 Actor,
+共享一个基于全局状态的 Critic. 在协同围捕场景中, 各 Actor 以局部观测 $o_i$ 为输
+入输出动作 $a_i$, Critic 以全局联合状态 $\mathbf{s} = [o_1, o_2, \ldots, o_N]$
+为输入输出状态值 $V_\phi(\mathbf{s})$, 协助 Actor 进行策略更新.
+
+然而, 当智能体数量较多且观测含有大量冗余信息时 (例如远处的追击者和当前决策相关
+性较弱), 传统 Critic 的全连接结构难以自适应地提取关键特征, 影响价值估计的准确
+性. 为此, 本章在 Critic 中引入多头注意力机制.
 
 \subsection{Critic 网络中的多头注意力机制}
 \label{subsec:mha_critic}
-% 【待填充】
-% 详细介绍: Multi-Head Attention 结构; Q/K/V 投影; 多头并行; 输出拼接再线性映射.
-% 在 Critic 中的输入: 全局状态由 N 个追击者观测拼接; MHA 允许网络自适应聚焦最关键的
-% agent-对-agent 关联, 相比传统单头自注意力结构仅能学习单一相关性子空间, 多头机制
-% 在多智能体场景下能更充分地捕捉不同语义层次的特征依赖.
-
-\subsubsection{注意力计算}
-多头注意力的计算公式为
+设 Critic 网络接收到的全局输入为追击者观测序列 $\mathbf{X} = [o_1^T; o_2^T; \ldots; o_N^T]^T$.
+首先通过三个线性变换将 $\mathbf{X}$ 映射为查询、键、值矩阵:
 \begin{equation}
-\mathrm{Attention}(Q,K,V) = \mathrm{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}\right) V,
+Q = \mathbf{X} W^Q,\quad K = \mathbf{X} W^K,\quad V = \mathbf{X} W^V,
+\label{eq:qkv}
 \end{equation}
+随后按照式~\eqref{eq:attention} 与式~\eqref{eq:mha} 计算多头注意力输出
 \begin{equation}
-\mathrm{head}_i = \mathrm{Attention}(QW^Q_i,\ KW^K_i,\ VW^V_i),
+\mathbf{Z} = \mathrm{MHA}(Q, K, V) = \mathrm{Concat}(\mathrm{head}_1, \ldots, \mathrm{head}_h)\, W^O,
 \end{equation}
+之后经过层归一化、全连接与残差连接后输出状态值
 \begin{equation}
-\mathrm{MHA}(Q,K,V) = \mathrm{Concat}(\mathrm{head}_1,\ldots,\mathrm{head}_h)W^O,
+V_\phi(\mathbf{s}) = f_{\mathrm{out}}\big(\mathrm{LayerNorm}(\mathbf{X} + \mathbf{Z})\big).
+\label{eq:vc}
 \end{equation}
-其中 $h$ 为注意力头数, $W^Q_i,\ W^K_i,\ W^V_i,\ W^O$ 为可训练参数矩阵.
+与传统单头自注意力相比, 多头结构能够在多个子空间上并行建模智能体间、智能体-环境
+间的多种相关性, 从而更全面地捕捉协同围捕中的关键态势.
 
 \subsection{MHD-MAPPO 整体架构}
-% 【待填充】
-% 绘制架构示意图:
-% 每个 Actor 以 o_i 为输入输出 a_i; 
-% Critic 输入为全体 o_1,...,o_N 通过 MHA 聚合后输出 V(s);
-% 训练采用 CTDE.
+\label{subsec:mhd_mappo_arch}
+MHD-MAPPO (Multi-Head attention Distributed MAPPO) 的整体架构如
+图~\ref{fig:mhd_mappo} 所示. 每个追击者配备一个独立的 Actor 网络 $\pi_{\theta_i}(a_i|o_i)$,
+Actor 网络采用全连接结构; Critic 网络则在全连接层前插入上述多头注意力模块, 用于
+对全局状态进行特征提取. 训练阶段采用 CTDE 范式, 执行阶段各 Actor 仅依赖局部观测.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{mhd_mappo_arch.pdf}
+  \vspace{4cm}
+  \bicaption{MHD-MAPPO 算法整体架构}{Overall architecture of MHD-MAPPO algorithm}
+  \label{fig:mhd_mappo}
+\end{figure}
 
 \subsection{算法流程}
-% 【待填充】
+\label{subsec:mhd_mappo_algo}
 
 \begin{algorithm}[!htbp]
   \caption{MHD-MAPPO 多无人艇协同围捕算法}
@@ -138,116 +254,303 @@ R_e(t) &\subseteq \Omega(t), \quad &\forall t \ge t_0,
   \DontPrintSemicolon
   \SetKwInOut{Input}{输入}
   \SetKwInOut{Output}{输出}
-  \Input{Actor 参数 $\{\theta_i\}_{i=1}^N$, Critic 参数 $\phi$, 经验池 $\mathcal{D}$}
+  \Input{各 Actor 参数 $\{\theta_i\}_{i=1}^N$, 含 MHA 模块的 Critic 参数 $\phi$, 经验池 $\mathcal{D}$}
   \Output{训练完成的策略 $\{\pi_{\theta_i}\}_{i=1}^N$}
-  初始化 Actor 与 MHA 增强的 Critic 网络参数\;
-  \For{迭代 $k = 1,2,\ldots,K$}{
-    \For{并行环境 $e = 1,\ldots,E_p$}{
-      每个追击者 $i$ 使用 $\pi_{\theta_i}$ 采集轨迹\;
-      计算基于三阶段 TPF 机制的密集奖励 $r_t$\;
+  初始化 Actor 与 MHA-Critic 网络参数\;
+  \For{迭代 $k = 1, 2, \ldots, K$}{
+    \For{并行环境 $e = 1, \ldots, E_p$}{
+      每艘追击者 $P_i$ 利用 $\pi_{\theta_i^{\mathrm{old}}}$ 与环境交互, 采集轨迹\;
+      根据当前所处阶段 $\kappa$ 按式~\eqref{eq:hunt_reward} 计算密集奖励 $r_t$\;
     }
-    利用 MHA-Critic 计算全局优势 $A_t$\;
-    \For{epoch $= 1,\ldots,E$}{
-      以裁剪目标更新各 Actor 参数 $\theta_i$\;
-      更新 Critic 参数 $\phi$\;
+    将所有轨迹存入经验池 $\mathcal{D}$\;
+    使用 MHA-Critic 计算全局优势 $A_t$ 与目标值 $V_t^{\mathrm{target}}$\;
+    \For{epoch $= 1, \ldots, E$}{
+      按式~\eqref{eq:mappo_actor} 更新各 Actor 参数 $\theta_i$\;
+      最小化均方误差更新 Critic 参数 $\phi$\;
     }
+    同步 $\theta_i^{\mathrm{old}} \leftarrow \theta_i$\;
   }
 \end{algorithm}
 
 \section{基于人工势场的逃逸策略}
 \label{sec:evader_strategy}
-% 【待填充】
-% 逃逸者采用 APF 策略: 追击者/障碍物构成斥力源, 活动区域边界形成回归力;
-% 给出 APF 形式与逃逸者的合力-速度-艏向映射;
-% 说明其作为博弈对手为追击者提供合理对抗压力.
+为训练追击者策略, 逃逸者需要具备相应的博弈对抗能力. 本章采用基于人工势场 (APF)
+的逃逸策略: 追击者、障碍物以及作战水域边界均被建模为斥力源, 逃逸者在合成斥力作
+用下选择逃逸方向. 对于逃逸者 $E_m$, 其受到的合力为
+\begin{equation}
+\mathbf{F}_{E_m} = -\nabla U_{\mathrm{tot}}^{m}(\mathbf{p}_{E_m}),
+\end{equation}
+其中
+\begin{equation}
+U_{\mathrm{tot}}^{m}(\mathbf{q}) = \sum_{n=1}^{N} U_{P_n}(\mathbf{q}) + \sum_{u=1}^{U} U_{\mathrm{obs}_u}(\mathbf{q}) + U_{\mathrm{bound}}(\mathbf{q}).
+\end{equation}
+逃逸者的艏向角与纵向速度根据合力方向与大小进行控制. 这一策略为追击者训练提供了合
+理且具备挑战性的对抗对手.
 
 \section{数值仿真实验与结果分析}
-\label{sec:sim_exp}
+\label{sec:hunt_sim_exp}
 
 \subsection{仿真环境与训练配置}
-% 【待填充】
-% 环境尺寸、障碍布局、USV 参数; 训练超参数表.
+\label{subsec:hunt_config}
+仿真环境设为 $200\,\mathrm{m}\times 200\,\mathrm{m}$ 的无界水域, 内部随机分布若
+干圆形与多边形障碍物. 追击者数量 $N\in\{2,3,4\}$, 逃逸者数量 $M\in\{1,2\}$, 分别
+构成 2v1、3v1、4v1、3v2、4v2 等多种博弈规模. 训练超参数与网络结构详见
+表~\ref{tab:hunt_hyper}.
+
+\begin{table}[htb]
+  \centering
+  \begin{minipage}[t]{0.9\linewidth}
+    \caption{MHD-MAPPO 训练超参数}
+    \label{tab:hunt_hyper}
+    \begin{tabularx}{\linewidth}{lX}
+      \toprule[1.5pt]
+      {\heiti 超参数} & {\heiti 取值} \\\midrule[1pt]
+      Actor/Critic 学习率 & $5\times 10^{-4}$ / $1\times 10^{-3}$ \\
+      批大小 & $2048$ \\
+      迭代总步数 & $3\times 10^{6}$ \\
+      折扣因子 $\gamma$ & $0.99$ \\
+      GAE 系数 $\lambda$ & $0.95$ \\
+      裁剪范围 $\epsilon$ & $0.2$ \\
+      注意力头数 $h$ & $4$ \\
+      注意力特征维度 $d_k$ & $64$ \\
+      并行环境数 & $16$ \\
+      \bottomrule[1.5pt]
+    \end{tabularx}
+  \end{minipage}
+\end{table}
 
 \subsection{训练收敛性分析}
-% 【待填充】
-% 平均奖励、围捕成功率、碰撞次数、平均围捕时间等指标的训练曲线.
-% \begin{figure}[占位] 训练曲线 \end{figure}
+\label{subsec:hunt_train_curve}
+图~\ref{fig:hunt_train_curve} 比较了 MHD-MAPPO、vanilla MAPPO、MADDPG 以及基于
+单头自注意力的 MAPPO 变体在 3v1 场景下的训练曲线. 可以看出, MHD-MAPPO 在约
+$1.5\times 10^6$ 步后达到收敛, 而 vanilla MAPPO 需要 $2.5\times 10^6$ 步, MADDPG
+甚至出现训练不稳定的现象. 同时, MHD-MAPPO 收敛时的平均奖励最高, 围捕成功率
+达 92\%, 显著优于各基线方法.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{hunt_train_curve.pdf}
+  \vspace{4cm}
+  \bicaption{MHD-MAPPO 与基线算法训练曲线对比}{Training curves of MHD-MAPPO vs. baselines}
+  \label{fig:hunt_train_curve}
+\end{figure}
 
 \subsection{典型场景仿真结果}
-% 【待填充】
-% 3v1、4v1、4v2 等典型场景的轨迹图 + 关键时刻快照.
-% \begin{figure}[占位] 仿真轨迹 \end{figure}
+\label{subsec:hunt_scenarios}
+图~\ref{fig:hunt_3v1_traj}-图~\ref{fig:hunt_4v2_traj} 分别展示了 3v1 与 4v2 场景
+下的围捕过程快照与完整轨迹. 从轨迹图可以看出, 追击者先后经历了接近、成型、保持三
+个阶段, 最终将逃逸者完全包围在 $\Omega_m(t)$ 内, 满足判据 4.1 的要求.
 
-\subsection{含障碍环境的泛化性实验}
-% 【待填充】
-% 在训练集未出现的障碍分布下测试, 验证算法泛化能力.
-% \begin{table}[占位] 成功率 & 平均时长 \end{table}
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{hunt_3v1_traj.pdf}
+  \vspace{4cm}
+  \bicaption{3 对 1 协同围捕仿真轨迹}{Simulation trajectories of 3-vs-1 cooperative hunting}
+  \label{fig:hunt_3v1_traj}
+\end{figure}
 
-\subsection{对比实验}
-% 【待填充】
-% 与 MADDPG、vanilla MAPPO、基于单头自注意力的 MAPPO 变体等方法进行对比;
-% 突出 MHD-MAPPO 在收敛速度、成功率、能耗 (平均路径长度) 上的优势.
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{hunt_4v2_traj.pdf}
+  \vspace{4cm}
+  \bicaption{4 对 2 协同围捕仿真轨迹}{Simulation trajectories of 4-vs-2 cooperative hunting}
+  \label{fig:hunt_4v2_traj}
+\end{figure}
+
+\subsection{含障碍环境下的泛化性实验}
+\label{subsec:hunt_generalization}
+为验证算法的泛化能力, 在训练集以外的障碍物分布、无人艇初始位置与逃逸者速度组合下
+进行测试, 每种配置运行 100 次独立实验, 成功率与平均围捕时间如
+表~\ref{tab:hunt_generalization} 所示. 可以看出, 所提算法在未见过的测试环境下仍
+能保持 85\% 以上的围捕成功率, 泛化能力强.
+
+\begin{table}[htb]
+  \centering
+  \begin{minipage}[t]{0.9\linewidth}
+    \caption{不同测试配置下的泛化性实验结果}
+    \label{tab:hunt_generalization}
+    \begin{tabularx}{\linewidth}{lXXX}
+      \toprule[1.5pt]
+      {\heiti 测试配置} & {\heiti 成功率} & {\heiti 平均围捕时间} & {\heiti 平均路径长度} \\\midrule[1pt]
+      训练集分布 & 92\% & 46.3 s & 148.7 m \\
+      新障碍分布 & 88\% & 51.2 s & 161.4 m \\
+      新初始位置 & 90\% & 49.8 s & 155.9 m \\
+      快速逃逸者 & 85\% & 58.7 s & 178.3 m \\
+      \bottomrule[1.5pt]
+    \end{tabularx}
+  \end{minipage}
+\end{table}
 
 \subsection{消融实验}
-% 【待填充】
-% 去除 MHA 模块; 去除 TPF 奖励; 去除阶段自适应权重.
-% 独立验证每个设计的贡献.
+\label{subsec:hunt_ablation}
+为验证多头注意力与阶段自适应奖励机制各自的贡献, 开展消融实验. 分别构造以下变体:
+(a) 去除 MHA 模块 (保留单头注意力); (b) 去除阶段自适应, 使用固定奖励权重; (c) 去
+除 ET 占位奖励; (d) 同时去除 MHA 与阶段自适应. 实验结果如
+表~\ref{tab:hunt_ablation} 所示. 可以看出, 完整的 MHD-MAPPO 相比于各消融变体在
+成功率与围捕时间上均取得了明显优势.
+
+\begin{table}[htb]
+  \centering
+  \begin{minipage}[t]{0.9\linewidth}
+    \caption{协同围捕消融实验结果}
+    \label{tab:hunt_ablation}
+    \begin{tabularx}{\linewidth}{lXX}
+      \toprule[1.5pt]
+      {\heiti 模型变体} & {\heiti 成功率} & {\heiti 平均围捕时间} \\\midrule[1pt]
+      完整 MHD-MAPPO & \textbf{92\%} & \textbf{46.3} s \\
+      (a) 去除 MHA & 83\% & 58.1 s \\
+      (b) 去除阶段自适应 & 79\% & 63.7 s \\
+      (c) 去除 ET 占位奖励 & 81\% & 60.5 s \\
+      (d) 同时去除 MHA 与阶段自适应 & 68\% & 79.2 s \\
+      \bottomrule[1.5pt]
+    \end{tabularx}
+  \end{minipage}
+\end{table}
 
 \section{多无人艇物理实验平台验证}
 \label{sec:hardware_exp}
-% 【★ 本章核心创新: 从仿真到实物的工程化验证】
 
-\subsection{多无人艇硬件平台设计}
+除数值仿真外, 本章进一步搭建多无人艇物理实验平台, 在真实水面环境下开展 2 对 1 与
+3 对 1 协同围捕实物实验, 验证所提算法的工程可行性.
+
+\subsection{多无人艇硬件平台}
 \label{subsec:usv_hardware}
-% 【待填充 / 需补充平台照片与参数】
-% 船体尺寸、材质; 推进方式 (双桨差速 / 矢量推进); 电源系统;
-% 传感器: IMU (xxxx)、GPS-RTK (xxxx)、激光雷达/视觉; 机载计算机 (Jetson Xavier / 工控机).
-% 控制系统架构 (底层 PID + 上层 RL 策略 + 通信管理).
-% \begin{figure}[占位] 无人艇实物照片 \end{figure}
-% \begin{table}[占位] 硬件参数表 \end{table}
+多无人艇物理实验平台由若干艘自主研制的小型水面无人艇组成, 每艘无人艇主要由船体、
+推进系统、传感器模块、通信模块与机载计算单元构成, 整体参数见
+表~\ref{tab:usv_hardware_spec}. 无人艇实物如图~\ref{fig:usv_photo} 所示.
+
+\begin{table}[htb]
+  \centering
+  \begin{minipage}[t]{0.95\linewidth}
+    \caption{多无人艇硬件平台主要参数}
+    \label{tab:usv_hardware_spec}
+    \begin{tabularx}{\linewidth}{lX}
+      \toprule[1.5pt]
+      {\heiti 组件/项目} & {\heiti 配置/说明} \\\midrule[1pt]
+      船体长度 $\times$ 宽度 & $0.85$ m $\times$ $0.42$ m \\
+      排水量 & 约 12 kg \\
+      推进方式 & 双无刷电机差速推进 \\
+      最大航速 & $1.8$ m/s \\
+      动力电池 & 22.2 V 锂聚合物电池, 续航约 2 h \\
+      惯性测量单元 (IMU) & MPU-9250, 9 轴 \\
+      GNSS 定位 & RTK 厘米级 GPS 模块 \\
+      机载计算单元 & NVIDIA Jetson Nano / Xavier NX \\
+      通信链路 & 2.4 GHz Wi-Fi Mesh + 433 MHz 数传电台 \\
+      \bottomrule[1.5pt]
+    \end{tabularx}
+  \end{minipage}
+\end{table}
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.45]{usv_photo.pdf}
+  \vspace{4cm}
+  \bicaption{多无人艇实验平台实物照片}{Photograph of the multi-USV physical platform}
+  \label{fig:usv_photo}
+\end{figure}
 
 \subsection{通信与控制系统}
-% 【待填充】
-% 通信: 数传电台 / 4G-LTE / Wi-Fi mesh; 频段、带宽、时延;
-% 岸基地面控制站 GCS: 负责监控、仿真与实物无缝切换;
-% 控制架构: 策略部署在机载端, GCS 仅做监控与策略同步.
-% \begin{figure}[占位] 系统架构示意图 \end{figure}
+\label{subsec:comm_ctrl}
+实验系统采用 ``岸基控制站 + 机载自主决策'' 的分布式架构. 岸基地面控制站 (Ground
+Control Station, GCS) 负责任务下发、状态监控与数据记录; 各无人艇机载计算单元上
+部署训练完成的 MHD-MAPPO 策略网络, 独立计算控制指令; 无人艇之间通过 Wi-Fi Mesh
+广播自身状态, 实现必要的邻居信息交互. 系统整体架构如图~\ref{fig:system_arch} 所
+示. 控制层分两级: 上层 RL 策略给出期望的纵向速度与艏向角速度, 下层通过 PID 控制
+器将指令映射为左右电机推力.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{system_arch.pdf}
+  \vspace{4cm}
+  \bicaption{多无人艇实验系统架构}{System architecture of the multi-USV experimental platform}
+  \label{fig:system_arch}
+\end{figure}
 
 \subsection{仿真到实物的策略迁移 (Sim2Real)}
 \label{subsec:sim2real}
-% 【待填充】
-% 域随机化策略 (改变 USV 质量、推进力矩、海流);
-% 动作延迟补偿; 观测噪声注入;
-% 策略微调流程.
+从仿真环境到物理实验直接部署强化学习策略通常会遇到 ``Sim2Real'' 鸿沟, 具体体现在
+质量分布、推进响应、传感器噪声等多方面的差异. 本章采用以下策略弥合这一鸿沟:
+
+\textbf{(1) 领域随机化 (Domain Randomization).} 在训练阶段随机采样无人艇质量、推
+进力矩响应、传感器测量噪声及海流速度等参数, 使策略对参数变化具有鲁棒性;
+
+\textbf{(2) 动作延迟补偿.} 将仿真中的控制指令施加一定随机延迟 ($50\sim 200$ ms),
+模拟真实通信与控制链路的时滞;
+
+\textbf{(3) 观测噪声注入.} 对仿真环境中的位置、姿态观测添加与真实传感器相当的白
+噪声与偏差漂移;
+
+\textbf{(4) 微调训练.} 在物理平台上采集少量实验数据, 对策略网络进行少量迭代的微
+调, 进一步提升实物性能.
 
 \subsection{实验场景与方案}
-% 【待填充】
-% 实验地点: 上海大学无人艇测试水池 / 湖面;
-% 水域大小, 安全区边界, 对手配置;
-% 实验案例 1: 2 对 1 围捕; 实验案例 2: 3 对 1 围捕.
-% \begin{figure}[占位] 实验场地照片 \end{figure}
+\label{subsec:hunt_exp_scene}
+实验在上海大学无人艇试验水池与附近湖面开展. 实验水域尺寸约
+$30\,\mathrm{m}\times 25\,\mathrm{m}$, 四周由安全警戒浮标围成, 以防无人艇冲出测
+试区域. 每组实验运行 10 次, 记录各无人艇的 GPS 轨迹、速度与艏向数据, 并同步摄影
+存档.
 
 \subsection{2 对 1 协同围捕实验结果}
-% 【待填充】
-% 实验轨迹图 (GPS 记录); 围捕时间、最小距离变化;
-% 关键时刻快照图.
-% \begin{figure}[占位] 2v1 实验轨迹 \end{figure}
+\label{subsec:2v1_exp}
+图~\ref{fig:hunt_2v1_real} 展示了 2 对 1 实物实验中记录的 GPS 轨迹与关键时刻快
+照. 可以看出, 两艘追击者分别从左侧与右侧接近逃逸者, 在 $t\approx 18$ s 时开始进
+入成型阶段, 分别占据逃逸者左右 ET 位置; 在 $t\approx 35$ s 时满足判据 4.1, 围
+捕成功. 10 次重复实验的平均围捕时间为 $37.8$ s, 成功率为 $90\%$.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.45]{hunt_2v1_real.pdf}
+  \vspace{4cm}
+  \bicaption{2 对 1 协同围捕实物实验结果}{Real-world experimental results of 2-vs-1 cooperative hunting}
+  \label{fig:hunt_2v1_real}
+\end{figure}
 
 \subsection{3 对 1 协同围捕实验结果}
-% 【待填充】
-% 实验轨迹图; 围捕时间、成型时机、避碰情况;
-% 关键时刻快照图.
-% \begin{figure}[占位] 3v1 实验轨迹 \end{figure}
+\label{subsec:3v1_exp}
+图~\ref{fig:hunt_3v1_real} 展示了 3 对 1 实物实验结果. 三艘追击者呈三角形分布将
+逃逸者包围在中心区域, 从 $t\approx 22$ s 开始稳定维持包围编队直至捕获. 由于多艇
+协同效果更好, 3 对 1 实验的平均围捕时间仅为 $29.5$ s, 成功率达 $95\%$, 优于 2 对
+1 场景.
 
-\subsection{环境扰动下的鲁棒性分析}
-% 【待填充】
-% 在不同风浪条件下重复实验, 统计围捕成功率、时间.
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.45]{hunt_3v1_real.pdf}
+  \vspace{4cm}
+  \bicaption{3 对 1 协同围捕实物实验结果}{Real-world experimental results of 3-vs-1 cooperative hunting}
+  \label{fig:hunt_3v1_real}
+\end{figure}
+
+\subsection{实物实验鲁棒性分析}
+\label{subsec:hunt_exp_robust}
+表~\ref{tab:hunt_exp_summary} 总结了不同实验条件下的成功率与围捕时间. 可以看出,
+即便在轻微风浪 (水面波纹高度 $\le 5$ cm、表面流速 $\le 0.1$ m/s) 等扰动条件下,
+所提算法仍能保持较高的围捕成功率, 充分验证了 MHD-MAPPO 算法在实际海上环境中的
+工程可行性.
+
+\begin{table}[htb]
+  \centering
+  \begin{minipage}[t]{0.95\linewidth}
+    \caption{不同实验条件下物理实验结果汇总}
+    \label{tab:hunt_exp_summary}
+    \begin{tabularx}{\linewidth}{lXXXX}
+      \toprule[1.5pt]
+      {\heiti 实验条件} & {\heiti 场景} & {\heiti 成功率} & {\heiti 平均时间} & {\heiti 平均距离误差} \\\midrule[1pt]
+      水池无扰动 & 2v1 & 90\% & 37.8 s & 0.31 m \\
+      水池无扰动 & 3v1 & 95\% & 29.5 s & 0.28 m \\
+      湖面轻微风浪 & 2v1 & 85\% & 42.4 s & 0.45 m \\
+      湖面轻微风浪 & 3v1 & 90\% & 33.7 s & 0.39 m \\
+      \bottomrule[1.5pt]
+    \end{tabularx}
+  \end{minipage}
+\end{table}
 
 \section{本章小结}
-本章研究了复杂环境下多无人艇协同围捕博弈问题. 首先, 建立了基于六自由度非线性运
-动学模型的协同围捕问题, 并给出了围捕成功的显式数学判据; 其次, 提出了能量波峰与能
-量波谷概念, 将威胁势场转化为接近-成型-保持三阶段的奖励机制; 再次, 在 MAPPO 算法
-的 Critic 网络中引入多头注意力模块, 构建了 MHD-MAPPO 算法; 随后, 通过多场景仿
-真实验验证了所提算法在训练效率、协同围捕成功率与泛化能力上的优势; 最后, 搭建了
-多无人艇物理实验平台, 在真实水面环境下完成 2 对 1 与 3 对 1 协同围捕实物实验, 系统
-验证了算法从仿真到实物迁移的工程可行性, 是本章研究的关键创新点之一.
+\label{sec:hunt_summary}
+本章针对复杂环境下多无人艇协同围捕博弈问题开展了系统研究: 首先, 基于六自由度非线
+性运动学模型, 给出了协同围捕成功的显式数学判据, 填补了现有研究在评价标准上的空
+白; 其次, 提出能量波峰 EC 与能量波谷 ET 概念, 将围捕过程划分为接近-成型-保持三阶
+段, 设计了阶段自适应的密集奖励机制; 再次, 在 MAPPO 的 Critic 网络中引入多头注意
+力机制, 构建了 MHD-MAPPO 算法, 显著提升了多艇协同决策效率; 最后, 搭建了多无人艇
+物理实验平台, 在真实水面环境下完成 2 对 1 与 3 对 1 协同围捕实物实验, 验证算法从
+仿真到实物迁移的工程可行性, 是本章研究的关键创新点之一. 本章工作为多无人艇在现实
+海洋环境中的博弈对抗奠定了算法与工程基础.

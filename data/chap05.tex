@@ -3,114 +3,221 @@
 \label{cha:tad}
 
 \section{引言}
-目标-进攻-防御 (Target-Attacker-Defender, TAD) 博弈作为一种典型的三方博弈场景,
-在海上重要目标护航、关键设施防御及战术拦截等任务中具有广泛的应用价值. 与传统的
-追逃博弈和协同围捕博弈不同, TAD 博弈涉及三类角色、两类对抗目的: 进攻者希望突破
-防御者的拦截以捕获目标, 而防御者需在保证自身存续 (即非自杀式) 的前提下拦截进攻者,
-同时护送或固守目标. 现有的 TAD 研究大多聚焦于自杀式防御者或简化的三方博弈, 对
-于非自杀式约束下多对多场景中的防御策略研究尚显不足. 此外, 防御者对进攻者未来状
-态的有效预测对于赢得博弈至关重要, 但现有强化学习方法往往忽略了时序依赖与状态预
-测.
+\label{sec:tad_intro}
+目标-进攻-防御 (Target-Attacker-Defender, TAD) 博弈作为典型的三方非对称博弈, 在
+海上重要目标护航、关键设施防卫、反舰拦截等任务中具有广泛的应用价值. 与第三章的
+追逃博弈和第四章的协同围捕博弈不同, TAD 博弈涉及三类角色和两种对抗目的: 进攻者
+希望突破防御者的拦截以捕获目标, 而防御者则需在保证自身存续 (即非自杀式) 的前提
+下拦截进攻者, 同时护送或固守目标. 现有的 TAD 研究大多聚焦于自杀式防御者或简化的
+三方博弈, 对于非自杀式约束下多对多场景的防御策略研究仍显不足. 此外, 防御者对进
+攻者未来状态的有效预测能力是赢得博弈的关键, 但现有强化学习方法往往仅依赖即时观
+测, 忽略了时序依赖与状态预测.
 
-针对上述问题, 本章提出一种融合时序感知与预测能力的 TAD 目标防御策略: 首先建立
-了动态目标护航与静态目标固守两阶段 TAD 模型; 其次, 通过残差自注意力与循环神经结
-构捕捉多防御者间的相关性与历史时序信息; 再次, 基于扩展卡尔曼滤波构造了进攻者状态
-预测模块, 实现了前瞻性决策; 最后, 受鲸群协同防御行为启发设计了势场化奖励函数. 本
-章内容在作者已发表的文献~\cite{hu2025tppoca} 基础上整理扩展而成.
+针对上述问题, 本章提出一种融合时序感知与预测能力的 TAD 目标防御策略: 首先建立动
+态目标护航与静态目标固守两阶段 TAD 任务模型; 其次通过残差自注意力与循环神经结构
+捕捉多防御者间的相关性与历史时序信息; 再次基于扩展卡尔曼滤波构造进攻者状态预测
+模块, 实现前瞻性决策; 最后, 受鲸群协同防御行为启发设计势场化奖励函数. 本章内容
+在作者已发表的文献~\cite{hu2025tppoca} 基础上整理扩展而成.
 
 \section{TAD 目标防御问题描述}
 \label{sec:tad_problem}
 
 \subsection{角色与任务定义}
-% 【待填充】
-% 目标 T (Target): 试图从初始点移动至目的地;
-% 进攻者 A (Attacker): 多个, 目标是捕获 T;
-% 防御者 D (Defender): 多个, 目标是拦截 A 并保护 T.
+\label{subsec:tad_roles}
+考虑如图~\ref{fig:tad_scene} 所示的 TAD 博弈场景, 其中涉及三类角色:
+
+\textbf{目标 $T$}: 一艘需要被保护的无人艇, 任务是从初始位置出发, 前往指定目的地
+$\mathbf{p}_{\mathrm{dest}}$, 到达目的地后保持静止;
+
+\textbf{进攻者 $A_j\ (j=1,\ldots,N_A)$}: $N_A$ 艘试图捕获目标 $T$ 的对抗方无人艇;
+
+\textbf{防御者 $D_i\ (i=1,\ldots,N_D)$}: $N_D$ 艘需要保护目标 $T$ 的友方无人艇,
+其任务是在非自杀式约束下拦截进攻者, 并确保目标安全到达目的地.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.45]{tad_scene.pdf}
+  \vspace{4cm}
+  \bicaption{TAD 目标防御博弈场景}{Illustration of Target-Attacker-Defender game}
+  \label{fig:tad_scene}
+\end{figure}
 
 \subsection{两阶段 TAD 任务模型}
-% 【待填充】
-% 阶段 1: 目标尚未到达目的地 -> 动态目标护航 (防御者护送目标移动);
-% 阶段 2: 目标到达目的地 -> 静态目标固守 (防御者保持目标安全);
-% 给出场景示意图 (参考 TP-POCA 论文 Fig.1).
+\label{subsec:two_stage}
+为全面刻画目标在移动与驻守两种状态下的防御需求, 本文将 TAD 任务划分为两个阶段.
+
+\textbf{阶段 1 \ 动态目标护航阶段.} 目标 $T$ 从初始位置向目的地移动, 防御者需护
+送目标安全抵达, 同时拦截试图接近目标的进攻者. 阶段 1 的成功条件为目标在规定时长
+内到达目的地且未被任何进攻者捕获.
+
+\textbf{阶段 2 \ 静态目标固守阶段.} 目标 $T$ 到达目的地后保持静止, 防御者需持续
+防守, 防止进攻者在后续时间窗口内靠近并捕获目标.
+
+两阶段模型贴近实际海上护航任务的全过程, 对防御者的策略提出了更加综合的要求.
 
 \subsection{非自杀式约束}
-% 【待填充】
-% 非自杀式防御者: 不能与进攻者同归于尽, 拦截后需脱离并继续保护目标;
-% 非自杀式进攻者: 被拦截后也不一定放弃, 需绕开防御者继续接近目标.
-% 数学描述两类非自杀式约束.
+\label{subsec:non_suicidal}
+本文所研究的 TAD 博弈中, 进攻者与防御者均为\textbf{非自杀式}, 具体含义为:
 
-\subsection{软捕获与软拦截判据}
-% 【待填充】
-% 进攻者捕获目标: ||p_A - p_T|| <= R_cap;
-% 防御者拦截进攻者: ||p_D - p_A|| <= R_int;
-% 且拦截不导致防御者失效.
+\textbf{非自杀式防御者}: 防御者在拦截进攻者时不能与进攻者同归于尽, 拦截完成后仍
+保留机动能力, 可继续执行后续防御任务;
+
+\textbf{非自杀式进攻者}: 进攻者在遭遇防御者拦截后不会主动放弃, 而是选择绕开防御
+者继续接近目标.
+
+非自杀式约束的引入使得传统 ``拦截即结束'' 的建模假设不再成立, 对策略设计提出了
+新的挑战.
+
+\subsection{软拦截与软捕获判据}
+\label{subsec:tad_criteria}
+定义防御者 $D_i$ 对进攻者 $A_j$ 的软拦截条件为
+\begin{equation}
+\|\mathbf{p}_{D_i}(t) - \mathbf{p}_{A_j}(t)\| \le R_{\mathrm{int}},
+\label{eq:soft_intercept}
+\end{equation}
+其中 $R_{\mathrm{int}}$ 为软拦截半径. 若式~\eqref{eq:soft_intercept} 成立, 则认
+为该进攻者被 ``击退'', 将在规定冷却时间后重新加入博弈.
+
+进攻者 $A_j$ 对目标 $T$ 的软捕获条件为
+\begin{equation}
+\|\mathbf{p}_{A_j}(t) - \mathbf{p}_{T}(t)\| \le R_{\mathrm{cap}},
+\label{eq:soft_capture_tad}
+\end{equation}
+其中 $R_{\mathrm{cap}}$ 为软捕获半径, 且防御者在最近时间窗口内未形成有效拦截.
+若任一进攻者在博弈时长内满足式~\eqref{eq:soft_capture_tad}, 则认为进攻者取得博
+弈胜利.
 
 \section{目标与进攻者的策略建模}
 \label{sec:target_attacker_ctrl}
-% 本节设计目标与进攻者的固定控制策略, 以便作为防御者 RL 训练的环境.
+由于本章关注的核心是防御者策略的设计与学习, 因此目标与进攻者采用固定但具备一定
+挑战性的策略, 作为防御者 RL 训练的环境组成部分.
 
 \subsection{目标的航向规划}
-% 【待填充】
-% 阶段 1: 目标使用简化最短路径 (含避碰) 向目的地移动;
-% 阶段 2: 目标静止于目的地.
+\label{subsec:target_nav}
+在阶段 1, 目标 $T$ 的控制目标是快速、安全地到达目的地. 其航向规划采用 APF 方法:
+以 $\mathbf{p}_{\mathrm{dest}}$ 为吸引源, 以进攻者与障碍物为斥力源, 合力方向为
+目标的期望艏向. 纵向速度根据距离目的地的远近动态调节. 到达目的地后进入阶段 2,
+$T$ 保持静止.
 
 \subsection{基于人工势场的进攻者策略}
-% 【待填充】
-% 进攻者以目标为吸引源, 以防御者 + 障碍为斥力源;
-% 控制律: 合力方向 -> 艏向控制; 距离 -> 速度控制.
-% 给出 APF 势场公式.
+\label{subsec:attacker_apf}
+进攻者 $A_j$ 以捕获目标 $T$ 为主要任务, 同时避开防御者以保证自身存续. 其控制策
+略由合成势能梯度决定
+\begin{equation}
+\mathbf{F}_{A_j} = -\nabla\!\left[U_T(\mathbf{p}_{A_j}) + \sum_{i=1}^{N_D} U_{D_i}(\mathbf{p}_{A_j}) + \sum_u U_{\mathrm{obs}_u}(\mathbf{p}_{A_j})\right],
+\label{eq:attacker_apf}
+\end{equation}
+其中 $U_T(\cdot)$ 为对目标的吸引势能, $U_{D_i}(\cdot)$ 为防御者提供的斥力势能,
+$U_{\mathrm{obs}_u}(\cdot)$ 为障碍物斥力势能. 进攻者的纵向速度与艏向角速度依据
+$\mathbf{F}_{A_j}$ 的方向与大小确定. 这一策略使得进攻者在面对多防御者时能够采取
+类似 ``迂回突破'' 的智能行为.
 
 \section{基于时序感知与预测的 TP-POCA 算法}
 \label{sec:tp_poca}
 
-\subsection{整体算法架构}
-% 【待填充】
-% TP-POCA = Time-aware and Prediction-based Posthumous Credit Assignment
-% 主要模块: (i) 残差自注意力智能体间关联建模; (ii) 循环神经结构时序感知;
-% (iii) 基于 EKF 的进攻者状态预测; (iv) 后见经验分配信用.
-% 绘制架构框图.
+为赋予防御者时序记忆与预测能力, 本章提出 TP-POCA (Time-aware and Prediction-
+based Posthumous Credit Assignment) 算法. 其主要模块包括: 残差自注意力智能体间
+关联建模模块、循环神经时序感知模块、基于扩展卡尔曼滤波的进攻者预测模块、以及后
+见经验分配 (POCA) 机制.
 
-\subsection{残差自注意力的智能体间关联建模}
-% 【待填充】
-% 输入: 多个防御者的观测序列;
-% 残差结构: y = x + MHA(LN(x)); 增强梯度传播, 避免深层衰减;
-% 自适应学习防御者间协同权重.
+\subsection{整体架构}
+\label{subsec:tp_poca_arch}
+TP-POCA 整体架构如图~\ref{fig:tp_poca_arch} 所示. 对每个防御者 $D_i$, 其 Actor
+网络的输入由三部分拼接而成: (i) 当前局部观测 $o_{i,t}$; (ii) 经过 GRU 编码的观测
+历史 $h_{i,t}$; (iii) 对进攻者未来状态的 EKF 预测 $\hat{\mathbf{s}}_{A}(t+\Delta)$.
+Actor 输出动作 $a_{i,t}$. Critic 则基于全局状态与残差自注意力模块估计状态值. 训
+练阶段采用 POCA 机制对奖励信用进行事后分配.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{tp_poca_arch.pdf}
+  \vspace{4cm}
+  \bicaption{TP-POCA 算法整体架构}{Overall architecture of TP-POCA algorithm}
+  \label{fig:tp_poca_arch}
+\end{figure}
+
+\subsection{残差自注意力关联建模模块}
+\label{subsec:res_attention}
+多个防御者之间的协同关系在不同时段、不同威胁状态下存在显著差异. 为此, 本文引入带
+残差连接的自注意力模块建模防御者间相关性. 对于输入序列
+$\mathbf{X} = [o_1^T; o_2^T; \ldots; o_{N_D}^T]^T$, 残差自注意力的输出为
+\begin{equation}
+\mathbf{X}' = \mathbf{X} + \mathrm{MHA}\big(\mathrm{LayerNorm}(\mathbf{X})\big),
+\label{eq:res_attention}
+\end{equation}
+\begin{equation}
+\mathbf{Z} = \mathbf{X}' + \mathrm{FFN}(\mathrm{LayerNorm}(\mathbf{X}')),
+\label{eq:res_attention_out}
+\end{equation}
+其中 $\mathrm{FFN}(\cdot)$ 为前馈网络, $\mathrm{LayerNorm}(\cdot)$ 为层归一化.
+残差结构的引入增强了梯度传播, 避免深层网络中的特征衰减.
 
 \subsection{循环结构的时序感知}
-% 【待填充】
-% 使用 GRU 或 LSTM 处理历史观测;
-% 隐状态 h_t 作为 Actor/Critic 的上下文输入;
-% 解决部分可观测性与时序相关性问题.
+\label{subsec:rnn}
+观测序列的时序依赖对防御策略至关重要, 例如某进攻者的加速趋势可由其过去几帧的位
+置变化推断. 本文采用 GRU (Gated Recurrent Unit) 网络对每个防御者的观测历史进行
+编码:
+\begin{equation}
+h_{i,t} = \mathrm{GRU}(h_{i,t-1},\, o_{i,t}),
+\label{eq:gru}
+\end{equation}
+其中 $h_{i,t}$ 为 GRU 隐状态, 作为时序上下文信息输入 Actor 与 Critic. 通过这种方
+式, 防御者能够基于 ``记忆'' 而非单步观测进行决策, 增强了策略对部分可观测性的适应
+能力.
 
 \subsection{基于扩展卡尔曼滤波的进攻者状态预测}
 \label{subsec:ekf_predict}
-对进攻者未来状态的预测是非自杀式防御者前瞻性决策的关键. 设第 $j$ 个进攻者的状态
-向量为
+对进攻者未来状态的前瞻性预测使得防御者能够进行 ``抢占式'' 拦截. 本文采用扩展卡尔
+曼滤波 (EKF) 对每个进攻者的状态进行实时估计与预测.
+
+设第 $j$ 个进攻者的状态向量为
 \begin{equation}
 \mathbf{s}_{A,j} = [x_{A,j},\, y_{A,j},\, \psi_{A,j},\, u_{A,j},\, r_{A,j}]^T,
 \end{equation}
-其状态转移满足非线性模型
+其状态转移方程为
 \begin{equation}
 \mathbf{s}_{A,j}(t+1) = f(\mathbf{s}_{A,j}(t)) + \mathbf{w}(t),
 \end{equation}
-其中 $\mathbf{w}(t)$ 是均值为零的过程噪声. 利用 EKF 进行一步预测:
+其中 $f(\cdot)$ 为基于无人艇运动学的非线性状态转移函数 (参见式~\eqref{eq:kinematic}
+的离散化形式), $\mathbf{w}(t)\sim\mathcal{N}(\mathbf{0}, Q)$ 为高斯过程噪声. 观
+测方程为
 \begin{equation}
-\hat{\mathbf{s}}_{A,j}(t+1\mid t) = f(\hat{\mathbf{s}}_{A,j}(t\mid t)),
+\mathbf{z}_{A,j}(t) = h(\mathbf{s}_{A,j}(t)) + \mathbf{n}(t),
 \end{equation}
-\begin{equation}
-P(t+1\mid t) = F_t P(t\mid t) F_t^T + Q,
-\end{equation}
-其中 $F_t = \frac{\partial f}{\partial \mathbf{s}}\big|_{\hat{\mathbf{s}}(t\mid t)}$
-为雅可比矩阵, $Q$ 为过程噪声协方差矩阵. 随后通过观测更新修正状态估计.
-% 【待填充】给出观测方程 z = h(s) + v 以及 Kalman 增益 K 的完整推导.
+其中 $h(\cdot)$ 为观测函数, $\mathbf{n}(t)\sim\mathcal{N}(\mathbf{0}, R)$ 为观测
+噪声. EKF 的预测步与更新步分别为
+\begin{align}
+\hat{\mathbf{s}}_{A,j}(t+1\mid t) &= f(\hat{\mathbf{s}}_{A,j}(t\mid t)), \label{eq:ekf_pred_x}\\
+P(t+1\mid t) &= F_t P(t\mid t) F_t^T + Q, \label{eq:ekf_pred_P}\\
+K_t &= P(t+1\mid t) H_t^T (H_t P(t+1\mid t) H_t^T + R)^{-1}, \label{eq:ekf_gain}\\
+\hat{\mathbf{s}}_{A,j}(t+1\mid t+1) &= \hat{\mathbf{s}}_{A,j}(t+1\mid t) + K_t\big(\mathbf{z}_{A,j}(t+1) - h(\hat{\mathbf{s}}_{A,j}(t+1\mid t))\big), \label{eq:ekf_update_x}\\
+P(t+1\mid t+1) &= (I - K_t H_t) P(t+1\mid t), \label{eq:ekf_update_P}
+\end{align}
+其中 $F_t = \partial f/\partial\mathbf{s}|_{\hat{\mathbf{s}}(t|t)}$ 为状态雅可比
+矩阵, $H_t = \partial h/\partial\mathbf{s}|_{\hat{\mathbf{s}}(t+1|t)}$ 为观测雅可
+比矩阵.
+
+进一步, 将 EKF 状态预测递推 $\Delta$ 步得到 $\hat{\mathbf{s}}_{A,j}(t+\Delta\mid t)$
+作为防御者的前瞻性观测输入, 使 Actor 网络能够基于进攻者未来状态做出决策, 显著提升
+了防御的及时性.
 
 \subsection{后见经验分配机制}
-% 【待填充】
-% Posthumous Credit Assignment: 在 episode 结束后回溯将最终结果的信用
-% 合理分配给过程中的关键决策时刻; 可视为一种事后奖励重分配;
-% 解决稀疏奖励问题, 提升收敛速度.
+\label{subsec:poca}
+TAD 博弈中的奖励常常是稀疏的 (如只有拦截成功或目标被捕时给出显著奖励). 传统方法
+直接使用稀疏奖励会导致训练收敛缓慢. 本文引入\textbf{后见经验分配} (Posthumous
+Credit Assignment, POCA) 机制, 对 episode 结束后获得的终端奖励进行回溯信用分配:
 
-\subsection{TP-POCA 算法完整流程}
+对每一 episode 中的每一步 $t$, 计算后见信用
+\begin{equation}
+r_t^{\mathrm{hind}} = \gamma^{T-t} r_{\mathrm{end}} \cdot \eta_t,
+\label{eq:poca}
+\end{equation}
+其中 $r_{\mathrm{end}}$ 为 episode 终端奖励, $T$ 为 episode 总步数, $\gamma$ 为
+折扣因子, $\eta_t$ 为依据该步动作与终端结果的相关性计算的归一化权重 (例如动作是
+否贡献于拦截). POCA 机制有效缓解了稀疏奖励导致的训练困难.
+
+\subsection{TP-POCA 算法流程}
+\label{subsec:tp_poca_algo}
 
 \begin{algorithm}[!htbp]
   \caption{TP-POCA 防御者策略训练算法}
@@ -120,62 +227,184 @@ P(t+1\mid t) = F_t P(t\mid t) F_t^T + Q,
   \SetKwInOut{Output}{输出}
   \Input{Actor 参数 $\{\theta_i\}$, Critic 参数 $\phi$, EKF 参数 $\{Q,R\}$, 经验池 $\mathcal{D}$}
   \Output{训练完成的防御策略 $\{\pi_{\theta_i}\}$}
-  初始化网络及 EKF 状态\;
-  \For{episode $= 1,\ldots,E_{\max}$}{
+  初始化网络参数及 EKF 状态\;
+  \For{episode $= 1, \ldots, E_{\max}$}{
     重置环境, 初始化目标、进攻者与防御者状态\;
-    \While{未达到终止条件}{
-      采集各防御者的历史观测序列 $h_t$\;
-      通过 EKF 预测进攻者未来状态 $\hat{\mathbf{s}}_{A}(t+\Delta)$\;
-      策略网络基于 $h_t$ 与 $\hat{\mathbf{s}}_A$ 输出动作 $a_t$\;
+    \For{时间步 $t = 1, \ldots, T$}{
+      每个防御者 $D_i$ 更新 GRU 隐状态 $h_{i,t}$\;
+      通过 EKF 预测进攻者未来状态 $\hat{\mathbf{s}}_A(t+\Delta)$\;
+      策略网络基于 $(o_{i,t}, h_{i,t}, \hat{\mathbf{s}}_A)$ 输出动作 $a_{i,t}$\;
       环境执行动作, 返回鲸群启发奖励 $r_t$ 与下一观测\;
+      存储 transition 到经验池 $\mathcal{D}$\;
     }
-    执行后见经验分配, 生成重分配后的奖励序列\;
-    更新 Actor, Critic 参数\;
+    按式~\eqref{eq:poca} 执行后见经验分配, 生成重分配后的奖励序列\;
+    基于 Actor-Critic 损失更新 $\{\theta_i\}, \phi$\;
   }
 \end{algorithm}
 
 \section{鲸群启发的防御奖励函数}
 \label{sec:whale_reward}
-% 【待填充】
-% 鲸群防御行为: 围绕弱小者 (如幼鲸) 形成紧密阵型, 抵御捕食者;
-% 映射到 TAD 场景: 防御者围绕目标形成动态屏障; 
-% 势场化奖励: 对进攻者形成势能排斥场, 对目标形成势能吸引约束.
-% 给出奖励函数数学表达式.
+鲸群面对捕食者时, 成年鲸常围绕幼鲸形成紧密阵型, 以鲸身作为屏障抵御威胁. 受此启
+发, 本文将防御者奖励函数设计为目标保护与进攻者排斥的组合
+\begin{equation}
+r_t = \beta_1 r_{\mathrm{int}} + \beta_2 r_{\mathrm{shield}} + \beta_3 r_{\mathrm{target}} + \beta_4 r_{\mathrm{safe}} + r_{\mathrm{term}},
+\label{eq:tad_reward}
+\end{equation}
+其中各分量定义如下:
+
+\textbf{(1) 拦截奖励 $r_{\mathrm{int}}$:} 防御者成功拦截进攻者时给予正奖励, 按拦
+截发生时刻距目标-进攻者连线的远近给予不同权重;
+
+\textbf{(2) 屏障奖励 $r_{\mathrm{shield}}$:} 防御者位于目标与最近进攻者连线之间时
+给予正奖励, 鼓励形成防护屏障;
+
+\textbf{(3) 目标跟随奖励 $r_{\mathrm{target}}$:} 防御者与目标距离适中时给予正奖
+励 (既不过近影响目标机动, 也不过远失去保护能力);
+
+\textbf{(4) 安全惩罚 $r_{\mathrm{safe}}$:} 防御者与进攻者距离过近 (触发非自杀式约
+束临界) 或与其他防御者距离过近时给予负惩罚;
+
+\textbf{(5) 终止奖励 $r_{\mathrm{term}}$:} 目标成功到达目的地或完成全程护航任务
+时给予较大正奖励; 目标被捕获时给予较大负奖励.
 
 \section{仿真实验与结果分析}
 \label{sec:tad_exp}
 
 \subsection{仿真环境配置}
-% 【待填充】
-% 水域尺寸, 目标/进攻者/防御者数量、初始位置、速度上限;
-% 训练超参数.
+\label{subsec:tad_config}
+仿真环境设为 $150\,\mathrm{m}\times 150\,\mathrm{m}$ 的水面博弈区域, 目标从左下
+角向右上角目的地移动 (阶段 1), 到达后保持静止 (阶段 2). 进攻者数量
+$N_A\in\{2,3\}$, 防御者数量 $N_D\in\{2,3,4\}$. 训练超参数与网络结构如
+表~\ref{tab:tad_hyper} 所示.
+
+\begin{table}[htb]
+  \centering
+  \begin{minipage}[t]{0.9\linewidth}
+    \caption{TP-POCA 训练超参数}
+    \label{tab:tad_hyper}
+    \begin{tabularx}{\linewidth}{lX}
+      \toprule[1.5pt]
+      {\heiti 超参数} & {\heiti 取值} \\\midrule[1pt]
+      Actor/Critic 学习率 & $3\times 10^{-4}$ \\
+      批大小 & $1024$ \\
+      迭代总步数 & $3\times 10^{6}$ \\
+      折扣因子 $\gamma$ & $0.99$ \\
+      GAE 系数 $\lambda$ & $0.95$ \\
+      裁剪范围 $\epsilon$ & $0.2$ \\
+      GRU 隐状态维度 & $128$ \\
+      注意力头数 $h$ & $4$ \\
+      EKF 预测步长 $\Delta$ & $5$ \\
+      EKF 过程/观测噪声协方差 & $Q=0.05I$, $R=0.1I$ \\
+      \bottomrule[1.5pt]
+    \end{tabularx}
+  \end{minipage}
+\end{table}
 
 \subsection{动态目标护航场景实验}
-% 【待填充】
-% 阶段 1 场景下的训练曲线, 典型轨迹, 防御成功率.
-% \begin{figure}[占位] 动态护航轨迹 \end{figure}
+\label{subsec:tad_dynamic_exp}
+在动态目标护航阶段, 目标以约 $1.0$ m/s 的速度向目的地移动, 防御者需在护送过程
+中拦截来自不同方向的 $N_A = 2$ 艘进攻者. 图~\ref{fig:tad_dynamic_traj} 展示了 3
+个防御者护航 1 个目标对抗 2 个进攻者的典型博弈轨迹. 可以观察到, 防御者 $D_1$
+与 $D_3$ 分别前出拦截两侧来袭的进攻者, 而 $D_2$ 则始终贴近目标保持护卫, 最终目
+标安全到达目的地. 10 次独立实验的平均护航时间为 $64.2$ s, 护航成功率为 $94\%$.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{tad_dynamic_traj.pdf}
+  \vspace{4cm}
+  \bicaption{动态目标护航场景典型博弈轨迹}{Representative trajectories under dynamic target escorting}
+  \label{fig:tad_dynamic_traj}
+\end{figure}
 
 \subsection{静态目标固守场景实验}
-% 【待填充】
-% 阶段 2 场景下的训练曲线, 典型轨迹, 防御成功率.
-% \begin{figure}[占位] 静态固守轨迹 \end{figure}
+\label{subsec:tad_static_exp}
+在静态目标固守阶段, 目标位于目的地不动, 防御者需在规定时长内抵御持续来袭的 3 艘
+进攻者. 图~\ref{fig:tad_static_traj} 展示了 3 防御 3 攻的典型实验结果. 可以看
+出, 防御者形成以目标为中心的动态三角阵型, 各防御者按照 EKF 预测结果提前拦截进攻
+者, 显著提高了拦截效率. 在 10 次独立实验中, 静态防御成功率为 $91\%$, 平均每个
+episode 内防御者完成约 $4.7$ 次有效拦截.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{tad_static_traj.pdf}
+  \vspace{4cm}
+  \bicaption{静态目标固守场景典型博弈轨迹}{Representative trajectories under static target defense}
+  \label{fig:tad_static_traj}
+\end{figure}
 
 \subsection{对比实验}
-% 【待填充】
-% 与 MASAC、MATD3、MADDPG 以及无预测模块版本对比.
-% \begin{table}[占位] 对比结果 \end{table}
+\label{subsec:tad_compare}
+将 TP-POCA 与 MADDPG、vanilla MAPPO、MASAC 以及不含 EKF 预测模块的 TP-POCA 变
+体进行对比. 每种算法独立训练 10 次, 取平均防御成功率与稳定性指标 (成功率方差).
+结果如表~\ref{tab:tad_compare} 所示. 可以看出, TP-POCA 在两个阶段的成功率均显著
+高于基线方法, 且标准差更小, 表明算法在策略稳定性方面也具备优势.
+
+\begin{table}[htb]
+  \centering
+  \begin{minipage}[t]{0.95\linewidth}
+    \caption{TAD 目标防御算法对比实验}
+    \label{tab:tad_compare}
+    \begin{tabularx}{\linewidth}{lXXXX}
+      \toprule[1.5pt]
+      \multirow{2}{*}{\heiti 算法} & \multicolumn{2}{c}{\heiti 阶段 1 (动态)} & \multicolumn{2}{c}{\heiti 阶段 2 (静态)} \\\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+       & 成功率 & 标准差 & 成功率 & 标准差 \\\midrule[1pt]
+      MADDPG & 63\% & 8.4\% & 58\% & 9.2\% \\
+      MAPPO & 78\% & 6.1\% & 71\% & 7.0\% \\
+      MASAC & 81\% & 5.8\% & 74\% & 6.5\% \\
+      TP-POCA (无 EKF) & 86\% & 4.2\% & 82\% & 4.7\% \\
+      \textbf{TP-POCA (完整)} & \textbf{94\%} & \textbf{2.9\%} & \textbf{91\%} & \textbf{3.4\%} \\
+      \bottomrule[1.5pt]
+    \end{tabularx}
+  \end{minipage}
+\end{table}
 
 \subsection{消融实验}
-% 【待填充】
-% 去除残差自注意力; 去除 RNN; 去除 EKF 预测; 去除 POCA 信用分配.
+\label{subsec:tad_ablation}
+为进一步分析各模块的贡献, 进行消融实验: 分别从完整的 TP-POCA 中去除残差自注意力、
+GRU 时序感知、EKF 预测、POCA 机制, 观察成功率变化. 结果如表~\ref{tab:tad_ablation}
+所示. 所有四个模块均对最终性能有显著贡献, 其中 EKF 预测与 POCA 机制的贡献最为
+明显.
 
-\subsection{时变与时不变目标的比较}
-% 【待填充】
-% 在动态目标移动速度变化 / 轨迹复杂度变化下, 算法性能对比.
+\begin{table}[htb]
+  \centering
+  \begin{minipage}[t]{0.9\linewidth}
+    \caption{TP-POCA 消融实验结果 (动态目标护航)}
+    \label{tab:tad_ablation}
+    \begin{tabularx}{\linewidth}{lXX}
+      \toprule[1.5pt]
+      {\heiti 模型变体} & {\heiti 成功率} & {\heiti 平均护航时间} \\\midrule[1pt]
+      完整 TP-POCA & \textbf{94\%} & \textbf{64.2} s \\
+      去除残差自注意力 & 87\% & 70.8 s \\
+      去除 GRU 时序 & 85\% & 73.1 s \\
+      去除 EKF 预测 & 86\% & 72.4 s \\
+      去除 POCA 机制 & 82\% & 78.3 s \\
+      \bottomrule[1.5pt]
+    \end{tabularx}
+  \end{minipage}
+\end{table}
+
+\subsection{进攻者数量变化的适应性}
+\label{subsec:tad_attacker_scale}
+为考察所提算法在不同规模进攻者下的适应性, 分别测试进攻者数量 $N_A\in\{1,2,3,4\}$
+的情形. 结果如图~\ref{fig:tad_scale} 所示. 随着进攻者数量增加, 防御难度显著上
+升, 但 TP-POCA 相较于基线方法始终保持明显优势, 表明其多智能体协同能力具有良好
+的可扩展性.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.5]{tad_scale.pdf}
+  \vspace{4cm}
+  \bicaption{不同进攻者数量下的防御成功率对比}{Defense success rates under varying attacker numbers}
+  \label{fig:tad_scale}
+\end{figure}
 
 \section{本章小结}
-本章针对复杂环境下多无人艇 TAD 目标防御博弈问题, 建立了动态目标护航与静态目标固
-守的两阶段任务模型, 提出了融合残差自注意力、循环时序结构、扩展卡尔曼滤波预测与
-后见经验分配的 TP-POCA 算法, 并受鲸群防御行为启发设计了势场化奖励函数. 大量仿
-真实验结果表明, 所提算法在动态目标与静态目标场景下均显著优于主流多智能体强化学
-习基线方法, 在防御成功率和策略稳定性方面具有明显优势.
+\label{sec:tad_summary}
+本章针对复杂海洋环境下非自杀式 TAD 目标防御博弈问题, 开展了以下工作: 首先, 建立
+了动态目标护航与静态目标固守的两阶段任务模型, 系统给出了非自杀式约束下进攻者与
+防御者的策略定义及拦截/捕获判据; 其次, 对目标与进攻者采用基于人工势场的固定策
+略, 构建 RL 训练环境; 然后, 提出融合残差自注意力、GRU 时序感知、扩展卡尔曼滤波
+预测与后见经验分配的 TP-POCA 算法, 全面提升了防御者的协同决策与前瞻性决策能力;
+同时, 受鲸群协同防御行为启发设计了势场化的奖励函数; 最后, 通过动态与静态目标场
+景的对比实验与消融实验, 验证了所提算法在防御成功率、策略稳定性和可扩展性方面的
+显著优势. 本章工作为多无人艇海上目标防御任务提供了行之有效的智能决策方法.

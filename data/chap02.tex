@@ -3,23 +3,35 @@
 \label{cha:prelim}
 
 \section{引言}
-本章介绍论文所涉及的基础理论知识, 为后续章节的研究提供理论支撑. 首先介绍水面无
-人艇的运动学与动力学模型, 包括坐标系定义、六自由度刚体模型及欠驱动特性分析; 随
-后给出海洋环境扰动的数学建模; 接着介绍本文所涉及的博弈论基础; 最后简要介绍深度
-强化学习中与本文相关的核心算法.
+\label{sec:prelim_intro}
+本章介绍论文所涉及的基础理论, 为后续研究提供必要支撑. 首先给出水面无人艇的六自由
+度运动学与动力学建模, 并讨论其欠驱动特性与海洋环境扰动建模; 随后介绍博弈论基础,
+包括微分博弈、马尔可夫博弈及部分可观马尔可夫决策过程; 最后阐述本文所涉及的深度强
+化学习方法, 包括近端策略优化 (PPO)、多智能体近端策略优化 (MAPPO)、软演员-评论家
+(SAC) 及注意力机制等.
 
 \section{水面无人艇运动学与动力学建模}
 \label{sec:usv_model}
 
 \subsection{参考坐标系与符号定义}
-本文采用大地惯性坐标系 $E_0$ 和船体随动坐标系 $B_0$ 描述水面无人艇的运动. 其中,
-$E_0$ 的原点固连于地面某一点, 三轴分别指向北、东、地下方向; $B_0$ 的原点固连于无
-人艇的质心, 三轴分别指向船首、右舷及船底. 无人艇的六自由度运动变量如
-表~\ref{tab:usv_variables} 所示.
+\label{subsec:coord}
+为便于描述水面无人艇的空间运动, 本文采用大地惯性坐标系 $E_0$ 和船体随动坐标系
+$B_0$ 进行建模, 如图~\ref{fig:coord} 所示. 惯性系 $E_0$ 的原点固连于地面某一固定
+点, 三个坐标轴 $x_{E}, y_{E}, z_{E}$ 分别指向北、东、地下方向; 船体系 $B_0$ 的原点
+固连于无人艇的质心, 三个坐标轴 $x_{B}, y_{B}, z_{B}$ 分别沿船首方向、右舷方向与船
+底方向. 无人艇的六自由度运动变量定义如表~\ref{tab:usv_variables} 所示.
+
+\begin{figure}[!htbp]
+  \centering
+  % \includegraphics[scale=0.4]{coord_system.pdf}
+  \vspace{3cm}
+  \bicaption{水面无人艇坐标系定义}{Coordinate systems of unmanned surface vehicle}
+  \label{fig:coord}
+\end{figure}
 
 \begin{table}[htb]
   \centering
-  \begin{minipage}[t]{0.9\linewidth}
+  \begin{minipage}[t]{0.92\linewidth}
     \caption[无人艇坐标变量定义]{水面无人艇六自由度坐标变量定义}
     \label{tab:usv_variables}
     \begin{tabularx}{\linewidth}{lXXXXXX}
@@ -32,110 +44,286 @@ $E_0$ 的原点固连于地面某一点, 三轴分别指向北、东、地下方
   \end{minipage}
 \end{table}
 
-\subsection{六自由度运动学模型}
-% 【待填充】
-% 给出位姿向量 η=[P,Θ]=[x,y,z,φ,θ,ψ]^T; 船体系速度 v=[V_b,W_b]^T.
-% R(Θ) 和 T(Θ) 变换矩阵 (见你 ICAIS 论文公式 1-4).
-% 运动学方程 η_dot = J_k(ξ) v.
+定义无人艇在惯性系下的位姿向量为
+\begin{equation}
+\eta = [\mathbf{P}^T,\, \Theta^T]^T,\quad
+\mathbf{P} = [x,y,z]^T,\quad
+\Theta = [\phi,\theta,\psi]^T,
+\label{eq:eta}
+\end{equation}
+在船体系下的广义速度向量为
+\begin{equation}
+\bm{v} = [\mathbf{V}_b^T,\, \mathbf{W}_b^T]^T,\quad
+\mathbf{V}_b = [u,v,w]^T,\quad
+\mathbf{W}_b = [p,q,r]^T.
+\label{eq:v_body}
+\end{equation}
 
-定义无人艇的位姿向量为
+\subsection{六自由度运动学模型}
+\label{subsec:kinematic}
+船体系到惯性系的线速度变换矩阵 $R(\Theta)$ 与角速度变换矩阵 $T(\Theta)$ 分别为
 \begin{equation}
-\eta = [\mathbf{P}^T,\, \Theta^T]^T, \quad
-\mathbf{P}=[x,y,z]^T, \quad \Theta=[\phi,\theta,\psi]^T,
+R(\Theta)=
+\begin{bmatrix}
+c\psi c\theta & -s\psi c\phi + c\psi s\theta s\phi & s\psi s\phi + c\psi s\theta c\phi \\
+s\psi c\theta & c\psi c\phi + s\psi s\theta s\phi & -c\psi s\phi + s\psi s\theta c\phi \\
+-s\theta & c\theta s\phi & c\theta c\phi
+\end{bmatrix},
+\label{eq:R_theta}
 \end{equation}
-船体系下速度向量为
 \begin{equation}
-\bm{v} = [\mathbf{V}_b^T,\, \mathbf{W}_b^T]^T, \quad
-\mathbf{V}_b=[u,v,w]^T,\quad \mathbf{W}_b=[p,q,r]^T.
+T(\Theta)=
+\begin{bmatrix}
+1 & s\phi \tan\theta & c\phi \tan\theta \\
+0 & c\phi & -s\phi \\
+0 & s\phi/c\theta & c\phi/c\theta
+\end{bmatrix},
+\label{eq:T_theta}
 \end{equation}
-% 【待填充：R(Θ)、T(Θ) 的完整矩阵表达式，引用 ICAIS 2025 论文公式】
-则水面无人艇的六自由度运动学方程可写为
+其中 $s(\cdot)=\sin(\cdot), c(\cdot)=\cos(\cdot)$. 综合上述变换, 水面无人艇的六自
+由度运动学方程可写成统一形式
 \begin{equation}
 \dot{\eta} = J_k(\eta)\,\bm{v}, \quad
-J_k(\eta)=\begin{bmatrix} R(\Theta) & \mathbf{0}_{3\times3} \\ \mathbf{0}_{3\times3} & T(\Theta) \end{bmatrix}.
+J_k(\eta)=\begin{bmatrix} R(\Theta) & \mathbf{0}_{3\times3} \\ \mathbf{0}_{3\times3} & T(\Theta) \end{bmatrix},
+\label{eq:kinematic}
 \end{equation}
+其中 $J_k(\eta)$ 称为运动学雅可比矩阵~\cite{fossen2011handbook}. 需要指出的是,
+$T(\Theta)$ 在 $\theta=\pm\pi/2$ 处奇异, 但对于一般的水面航行工况 ($\theta$ 接近
+于零), 该奇异性不会发生, 因此上述模型适用于本文所研究的博弈场景.
 
-\subsection{欠驱动动力学特性分析}
-% 【待填充】欠驱动 USV 仅可控制纵向推力 τ_u 和艏向力矩 τ_r.
-% 指出 v、w、p、q 分量难以直接控制, 横向运动为耦合产生, 控制器设计难度大.
+\subsection{欠驱动动力学特性}
+\label{subsec:underactuated}
+水面无人艇的动力学方程可写为
+\begin{equation}
+M\dot{\bm{v}} + C(\bm{v})\bm{v} + D(\bm{v})\bm{v} + g(\eta) = \tau + \tau_d,
+\label{eq:dynamic}
+\end{equation}
+其中 $M$ 为包含附加质量的惯性矩阵, $C(\bm{v})$ 为科氏力与离心力矩阵, $D(\bm{v})$
+为水动力阻尼矩阵, $g(\eta)$ 为重力与浮力恢复项, $\tau$ 为执行机构产生的控制力/力
+矩向量, $\tau_d$ 为环境扰动等效力/力矩.
+
+考虑到工程实际, 本文所研究的水面无人艇仅装备螺旋桨推进器与方向舵, 执行机构只能产
+生纵向推力 $\tau_u$ 与艏向力矩 $\tau_r$, 即
+\begin{equation}
+\tau = [\tau_u,\, 0,\, 0,\, 0,\, 0,\, \tau_r]^T.
+\label{eq:underactuated_tau}
+\end{equation}
+由于横荡速度 $v$、垂荡速度 $w$、横摇角速度 $p$ 与纵摇角速度 $q$ 上均无独立控制输
+入, 上述动力学系统呈现典型的\textbf{欠驱动}特征. 这一特性限制了无人艇的机动自由度,
+对博弈策略设计提出了显著挑战: 一方面, 策略不能直接指定任意的三维速度向量, 而只能
+通过协调 $\tau_u$ 与 $\tau_r$ 间接影响横向运动; 另一方面, 在面对快速机动逃逸者或
+多方向障碍物时, 欠驱动约束可能导致避障与追击目标之间的冲突.
 
 \subsection{海洋环境扰动建模}
-% 【待填充】
-% 风、浪、流三类扰动的数学描述; 等效力/力矩形式; 用于后续算法鲁棒性验证.
+\label{subsec:disturbance}
+在真实海洋环境下, 无人艇受到风、浪、流等多种扰动的影响, 这些扰动对博弈策略的鲁棒
+性提出了严峻考验. 本文将外部扰动等效为式~\eqref{eq:dynamic} 中的扰动项 $\tau_d$,
+其由风力 $\tau_{wind}$、波浪力 $\tau_{wave}$ 与洋流力 $\tau_{current}$ 三部分组
+成, 即
+\begin{equation}
+\tau_d = \tau_{wind} + \tau_{wave} + \tau_{current}.
+\label{eq:tau_d}
+\end{equation}
+其中, 风力建模为风速 $V_w$ 与相对风向角 $\gamma_w$ 的二次函数, 波浪力建模为
+Jonswap 谱生成的时变力矩, 洋流力建模为近似恒定的低频干扰. 本文在仿真实验中将扰
+动参数在一定范围内随机采样, 以近似真实海况的时变特性. 具体的扰动生成方式将在第
+三章相应实验部分详细说明.
 
 \section{博弈论基础}
 \label{sec:game_theory}
 
 \subsection{微分博弈与 Hamilton-Jacobi-Isaacs 方程}
-% 【待填充】
-% 二人零和微分博弈的代价函数、鞍点解、HJI PDE.
-% 讨论其在追逃博弈中的经典地位, 以及维度灾难问题.
+\label{subsec:diff_game}
+微分博弈 (Differential Game) 由 Isaacs~\cite{isaacs1999differential} 于 20 世纪
+中期创立, 是一类描述连续时间下多方对抗的数学框架. 考虑二人零和微分博弈, 系统动
+态方程为
+\begin{equation}
+\dot{x} = f(x,u,w),\quad x(0)=x_0,
+\end{equation}
+其中 $x\in\mathbb{R}^n$ 为系统状态, $u\in\mathcal{U}$ 为追击者的控制输入,
+$w\in\mathcal{W}$ 为逃逸者的控制输入. 定义代价泛函
+\begin{equation}
+J(u,w) = \int_0^{T} L(x,u,w)\,dt + \Phi(x(T)),
+\end{equation}
+追击者希望最小化 $J$, 而逃逸者希望最大化 $J$. 若存在鞍点策略对
+$(u^\ast, w^\ast)$, 则其对应的价值函数 $V(x)=\min_u\max_w J(u,w)$ 满足 HJI 偏微
+分方程
+\begin{equation}
+\min_{u\in\mathcal{U}}\max_{w\in\mathcal{W}}\left[\frac{\partial V}{\partial x}^T f(x,u,w) + L(x,u,w)\right] = 0.
+\label{eq:hji}
+\end{equation}
+HJI 方程为博弈问题提供了严格的理论基础, 但其求解在高维状态空间下面临 ``维度灾
+难'' 问题~\cite{lopez2019multiagent,garcia2020multi}, 尤其是涉及多个追击者与多
+个逃逸者的复杂场景时, 难以直接应用. 因此, 本文采用基于强化学习的近似求解方法.
 
 \subsection{马尔可夫博弈}
-% 【待填充】
-% 马尔可夫博弈五元组 (N, S, {A_i}, P, {r_i});
-% 讨论纳什均衡的存在性; 与 MDP 的关系.
+\label{subsec:markov_game}
+马尔可夫博弈 (Markov Game), 又称随机博弈, 是 MDP 在多智能体场景下的自然推广, 是
+多智能体强化学习的理论基础. 马尔可夫博弈可由六元组 $\langle \mathcal{N},
+\mathcal{S}, \{\mathcal{A}_i\}_{i\in\mathcal{N}}, \mathcal{P}, \{r_i\}_{i\in\mathcal{N}},
+\gamma\rangle$ 描述, 其中
+\begin{itemize}
+  \item $\mathcal{N}=\{1,2,\ldots,N\}$ 为智能体集合;
+  \item $\mathcal{S}$ 为系统状态空间;
+  \item $\mathcal{A}_i$ 为智能体 $i$ 的动作空间, 联合动作空间记为 $\mathcal{A}=\mathcal{A}_1\times\cdots\times\mathcal{A}_N$;
+  \item $\mathcal{P}: \mathcal{S}\times\mathcal{A}\times\mathcal{S}\to [0,1]$ 为状态转移概率;
+  \item $r_i: \mathcal{S}\times\mathcal{A}\to\mathbb{R}$ 为智能体 $i$ 的奖励函数;
+  \item $\gamma\in[0,1)$ 为折扣因子.
+\end{itemize}
+当所有智能体的奖励函数一致时, 马尔可夫博弈退化为协作博弈; 当 $N=2$ 且 $r_1=-r_2$
+时, 退化为零和博弈. 在追逃博弈场景中, 追击者与逃逸者通常构成零和博弈; 而在协同围
+捕场景中, 多个追击者之间构成协作博弈, 追击者整体与逃逸者之间构成零和博弈.
 
 \subsection{部分可观马尔可夫决策过程}
-% 【待填充】
-% POMDP 定义 (S, A, O, P, R, Ω, γ);
-% Dec-POMDP 在多智能体系统中的作用;
-% 部分可观性对策略学习的影响.
+\label{subsec:pomdp}
+在实际应用中, 无人艇往往只能通过有限的传感器获取部分环境信息, 而不具备完整的状态
+信息, 此类问题适合用部分可观马尔可夫决策过程 (Partially Observable Markov
+Decision Process, POMDP) 建模. POMDP 可由七元组 $\langle\mathcal{S},
+\mathcal{A}, \mathcal{O}, \mathcal{P}, \mathcal{Z}, r, \gamma\rangle$ 描述, 其中
+$\mathcal{O}$ 为观测空间, $\mathcal{Z}: \mathcal{S}\times\mathcal{A}\times\mathcal{O}\to [0,1]$
+为观测函数. 每一时刻智能体仅能获得观测 $o_t\in\mathcal{O}$, 需基于观测历史
+$h_t=\{o_0,a_0,\ldots,o_t\}$ 进行决策.
+
+进一步, 在多智能体部分可观场景下, 问题扩展为分散式 POMDP (Dec-POMDP). 本文研究
+的追逃、协同围捕及 TAD 博弈问题均属于 Dec-POMDP 范畴, 每个无人艇仅能依据自身传感
+器获得的局部观测做出决策, 同时需要在训练阶段利用全局状态信息以缓解多智能体非平稳
+性问题.
 
 \section{深度强化学习理论}
 \label{sec:drl_theory}
 
 \subsection{强化学习基本概念}
-% 【待填充】
-% 智能体-环境交互; MDP 五元组; 值函数 V(s)、动作-值函数 Q(s,a); Bellman 方程.
+\label{subsec:rl_basic}
+强化学习通过智能体与环境的交互学习最优策略~\cite{sutton1998introduction}. 在 MDP
+框架下, 智能体在时刻 $t$ 观测到状态 $s_t\in\mathcal{S}$, 依据策略
+$\pi(a|s)$ 选择动作 $a_t\in\mathcal{A}$ 并执行, 环境返回下一状态 $s_{t+1}$ 与即
+时奖励 $r_t$. 智能体的目标是最大化累积折扣回报
+\begin{equation}
+G_t = \sum_{k=0}^{\infty}\gamma^k r_{t+k}.
+\end{equation}
+在策略 $\pi$ 下, 状态值函数和动作-值函数分别定义为
+\begin{equation}
+V^\pi(s) = \mathbb{E}_\pi[G_t\mid s_t=s], \quad
+Q^\pi(s,a) = \mathbb{E}_\pi[G_t\mid s_t=s, a_t=a],
+\end{equation}
+二者满足 Bellman 方程
+\begin{equation}
+V^\pi(s) = \sum_{a}\pi(a|s)\sum_{s'}\mathcal{P}(s'|s,a)\big[r(s,a) + \gamma V^\pi(s')\big].
+\end{equation}
 
 \subsection{策略梯度与 Actor-Critic 框架}
-% 【待填充】
-% 策略梯度定理; Actor 更新公式; Critic 更新公式 (TD 误差); 优势函数 A(s,a).
+\label{subsec:actor_critic}
+相比于基于值函数的方法, 策略梯度方法直接对参数化策略 $\pi_\theta(a|s)$ 进行优
+化, 特别适合连续动作空间下的控制问题. 策略梯度定理给出
+\begin{equation}
+\nabla_\theta J(\theta) = \mathbb{E}_{s\sim d^\pi, a\sim \pi_\theta}\left[\nabla_\theta \log \pi_\theta(a|s)\, A^\pi(s,a)\right],
+\end{equation}
+其中 $A^\pi(s,a) = Q^\pi(s,a) - V^\pi(s)$ 为优势函数, 反映动作 $a$ 相较于平均水
+平的优劣.
+
+Actor-Critic 框架由两个神经网络组成: Actor (策略网络) 输出动作分布, 依据策略梯
+度更新; Critic (价值网络) 估计状态值函数 $V_\phi(s)$, 以最小化时序差分误差更新,
+即
+\begin{equation}
+\mathcal{L}_{\mathrm{Critic}}(\phi) = \mathbb{E}\left[\big(r_t + \gamma V_\phi(s_{t+1}) - V_\phi(s_t)\big)^2\right].
+\end{equation}
+Actor-Critic 框架结合了策略梯度方法的直接优化优势与值函数方法的方差缩减能力, 已
+成为现代深度强化学习的主流架构.
 
 \subsection{近端策略优化算法}
 \label{subsec:ppo}
-近端策略优化算法 (Proximal Policy Optimization, PPO) 是一种适用于连续动作空间的
-基于策略的深度强化学习算法. 通过限制策略更新幅度, PPO 避免了直接信任域策略优化
-中 KL 散度约束所带来的复杂二阶优化问题, 在保证训练稳定性的同时显著提升了训练效
-率. Actor 网络的目标函数为
+近端策略优化算法 (Proximal Policy Optimization, PPO) 由 Schulman 等
+人~\cite{schulman2017ppo} 提出, 通过限制策略更新幅度保证训练稳定性. Actor 网络
+的目标函数为
 \begin{equation}
-L^{\mathrm{CLIP}}(\theta) = \mathbb{E}_t\left[\min\!\left(p_t(\theta)\, A_t,\
-\mathrm{clip}(p_t(\theta),\ 1-\epsilon,\ 1+\epsilon)\, A_t \right)\right],
+\mathcal{L}^{\mathrm{CLIP}}(\theta) = \mathbb{E}_t\!\left[\min\left(p_t(\theta) A_t,\ \mathrm{clip}(p_t(\theta),\, 1-\epsilon,\, 1+\epsilon)\, A_t\right)\right],
+\label{eq:ppo_clip}
 \end{equation}
 其中概率比
 \begin{equation}
-p_t(\theta) = \frac{\pi_\theta(a_t\mid s_t)}{\pi_{\theta_{\mathrm{old}}}(a_t\mid s_t)},
+p_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\mathrm{old}}}(a_t|s_t)},
+\label{eq:prob_ratio}
 \end{equation}
-$A_t$ 为优势函数, $\epsilon$ 为裁剪范围超参数. Critic 网络的损失函数为
+$A_t$ 为优势估计 (通常使用广义优势估计 GAE 计算), $\epsilon$ 为裁剪范围超参数.
+Critic 网络的损失函数为
 \begin{equation}
-L^{\mathrm{VF}}(\phi) = \mathbb{E}_t\!\left[(V_\phi(s_t) - V_t^{\mathrm{target}})^2\right].
+\mathcal{L}^{\mathrm{VF}}(\phi) = \mathbb{E}_t\!\left[\big(V_\phi(s_t) - V_t^{\mathrm{target}}\big)^2\right].
+\label{eq:ppo_vf}
 \end{equation}
+PPO 通过裁剪概率比避免了策略的过度更新, 在保证训练稳定性的同时显著提升了训练效
+率, 适合于本文研究的连续动作空间下欠驱动无人艇博弈问题.
 
 \subsection{多智能体集中训练-分布式执行框架}
-% 【待填充】
-% CTDE 框架思想: 训练时共享全局信息, 执行时各 agent 仅使用局部观测;
-% 解决非平稳性问题, 降低执行阶段通信负担.
+\label{subsec:ctde}
+集中训练-分布式执行 (Centralized Training with Decentralized Execution, CTDE)
+是多智能体强化学习的核心范式. 其基本思想是: 在训练阶段, Critic 网络可访问全局状
+态 $s$ 与所有智能体的联合动作信息, 以克服环境从单智能体视角下的非平稳性; 在执行
+阶段, 每个智能体仅依据自身局部观测 $o_i$ 和策略 $\pi_{\theta_i}(a_i|o_i)$ 做出决
+策, 降低了对通信的依赖.
 
-\subsection{多智能体近端策略优化算法 MAPPO}
-% 【待填充】
-% 在 PPO 基础上扩展到多智能体场景;
-% Critic 使用全局状态, Actor 使用局部观测;
-% 稍作说明与 MADDPG 的对比优势.
+CTDE 范式在实际部署中具有显著优势: 第一, 训练时的信息共享有助于稳定价值估计,
+加速收敛; 第二, 执行时的分布式决策使系统具备去中心化、抗干扰的特点; 第三, 该范
+式兼容 on-policy 与 off-policy 算法, 具有广泛的适用性.
 
-\subsection{软演员-评论家算法 SAC}
-% 【待填充】
-% SAC 最大熵目标 J = E[r + α H(π)];
-% 双 Q 网络与目标 Q 网络; 自动熵权重 α 调节.
+\subsection{多智能体近端策略优化算法}
+\label{subsec:mappo}
+多智能体近端策略优化 (MAPPO)~\cite{yu2022surprising} 是 PPO 在多智能体场景下的
+自然扩展. 该算法为每个智能体配备独立的 Actor 网络 $\pi_{\theta_i}(a_i|o_i)$, 而
+所有智能体共享一个基于全局状态 $s$ 的 Critic 网络 $V_\phi(s)$. Actor 网络的更
+新规则为
+\begin{equation}
+\mathcal{L}_i^{\mathrm{CLIP}}(\theta_i) = \mathbb{E}_t\!\left[\min\!\left(p_{i,t}(\theta_i) A_t,\ \mathrm{clip}(p_{i,t}(\theta_i), 1-\epsilon, 1+\epsilon) A_t\right)\right],
+\label{eq:mappo_actor}
+\end{equation}
+其中 $p_{i,t}(\theta_i) = \pi_{\theta_i}(a_{i,t}|o_{i,t}) / \pi_{\theta_{i,\mathrm{old}}}(a_{i,t}|o_{i,t})$.
+Yu 等人的实验表明, MAPPO 在多种多智能体协作基准任务上的性能超越了 MADDPG、
+QMIX 等 off-policy 基线方法, 是近年来多智能体强化学习领域的重要进展.
+
+\subsection{软演员-评论家算法}
+\label{subsec:sac}
+软演员-评论家 (Soft Actor-Critic, SAC) 算法~\cite{haarnoja2018sac} 基于最大熵
+强化学习框架, 其目标函数为
+\begin{equation}
+J(\pi) = \sum_{t}\mathbb{E}_{(s_t,a_t)\sim\rho_\pi}\!\left[r(s_t,a_t) + \alpha \mathcal{H}\big(\pi(\cdot|s_t)\big)\right],
+\label{eq:sac_obj}
+\end{equation}
+其中 $\mathcal{H}(\pi(\cdot|s)) = -\mathbb{E}_{a\sim\pi}[\log\pi(a|s)]$ 为策略熵,
+$\alpha$ 为温度系数. 最大熵目标鼓励策略在获得高奖励的同时保持高探索性, 有助于
+避免陷入局部最优.
+
+SAC 采用双 Q 网络结构以缓解 Q 值高估问题, 并自动调节温度系数 $\alpha$. 由于其
+出色的探索能力与样本效率, SAC 在连续控制任务中取得了优异表现, 也为本文第五章
+TAD 防御策略设计提供了参考.
 
 \subsection{注意力机制}
-% 【待填充】
-% Scaled Dot-Product Attention 公式;
-% 多头注意力 (Multi-Head Attention) 结构与优势;
-% 残差自注意力 (Residual Self-Attention) 及其在多智能体中的作用.
+\label{subsec:attention}
+注意力机制 (Attention Mechanism) 源于自然语言处理领域, 由
+Vaswani 等人~\cite{vaswani2017attention} 系统提出. 对于查询 $Q$、键 $K$、值
+$V$, 缩放点积注意力定义为
+\begin{equation}
+\mathrm{Attention}(Q,K,V) = \mathrm{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}\right)V,
+\label{eq:attention}
+\end{equation}
+其中 $d_k$ 为键向量的维度. 多头注意力 (Multi-Head Attention, MHA) 通过并行多组线
+性投影捕捉不同子空间的相关性, 其形式为
+\begin{equation}
+\mathrm{MHA}(Q,K,V) = \mathrm{Concat}(\mathrm{head}_1,\ldots,\mathrm{head}_h)\,W^O,
+\label{eq:mha}
+\end{equation}
+\begin{equation}
+\mathrm{head}_i = \mathrm{Attention}(QW_i^Q,\, KW_i^K,\, VW_i^V),
+\end{equation}
+其中 $h$ 为注意力头数, $W_i^Q, W_i^K, W_i^V, W^O$ 为可训练参数.
+
+在多智能体强化学习中引入注意力机制能够使智能体自适应地聚焦于影响自身决策的关键
+邻居, 有效缓解高维观测带来的信息冗余问题~\cite{iqbal2019maac}. 本文第四章将多头
+注意力引入 MAPPO 的 Critic 网络, 构建了 MHD-MAPPO 算法, 显著提升了多艇协同围捕
+场景下的决策效率.
 
 \section{本章小结}
-本章介绍了本文研究所需的基础理论. 首先给出了水面无人艇的六自由度运动学建模、欠
-驱动特性分析以及海洋环境扰动建模; 其次阐述了微分博弈、马尔可夫博弈与 POMDP 等
-博弈论基础; 最后介绍了 PPO、MAPPO、SAC 等深度强化学习算法及多头注意力等关键
-机制, 为第三至五章的研究提供了理论支撑.
+\label{sec:prelim_summary}
+本章系统介绍了本文研究所需的基础理论. 首先建立了水面无人艇的六自由度运动学与动
+力学模型, 讨论了其欠驱动特性与海洋环境扰动建模; 其次阐述了微分博弈、马尔可夫博弈
+与部分可观马尔可夫决策过程等博弈论基础; 最后介绍了 PPO、CTDE、MAPPO、SAC 等深度
+强化学习方法以及多头注意力机制. 这些理论与方法为第三章至第五章的算法设计提供了
+必要的数学基础与技术支撑.
