@@ -533,3 +533,26 @@ graphicspath 顺序查找会错误匹配到其他章节的图片, 造成 "图片
 - ✅ 文字段落更紧凑, 无多余换行
 
 ---
+
+## 2026-04-18 · 修复子图标题重复编号 (a)(a)
+
+### 背景
+作者反馈图 5.8 (TAD APF/MAPPO/MA-POCA 算法轨迹) 子图标题出现 (a)(a)、(b)(b)
+等重复编号. 原因: 在 \subcaptionbox{...} 第一参数中手写了 "(a)" / "步骤 (a)"
+等内容, 而 subcaption 包本身会自动添加 (a)/(b)/(c)/(d) 编号, 导致重复.
+
+### 修改清单
+| 位置 | 改前 | 改后 |
+|---|---|---|
+| chap05 图 5.7 (APF 三子图) | `\subcaptionbox{步骤 (a)\label{...}}` | `\subcaptionbox{\label{...}}` |
+| chap05 图 5.8 (MAPPO 四子图) | `\subcaptionbox{(a)\label{...}}` | `\subcaptionbox{\label{...}}` |
+| chap05 图 5.9 (MA-POCA 四子图) | `\subcaptionbox{(a)\label{...}}` | `\subcaptionbox{\label{...}}` |
+
+合计 11 个 subcaptionbox 修复.
+
+### 编译验证
+- ✅ main.pdf 共 83 页
+- ✅ 子图编号现仅显示 subcaption 自动生成的 (a)/(b)/(c)/(d), 无重复
+- ✅ 子图引用 \ref{fig:tad_apf_a} 等 label 正常工作
+
+---
