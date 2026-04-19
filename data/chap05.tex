@@ -22,15 +22,13 @@
 
 \subsection{角色与任务定义}
 \label{subsec:tad_roles}
-考虑如图~\ref{fig:tad_scene} 所示的 TAD 博弈场景, 其中涉及三类角色:
-
-\textbf{目标 $T$}: 一艘需要被保护的无人艇, 任务是从初始位置出发, 前往指定目的地
-$\mathbf{p}_{\mathrm{dest}}$, 到达目的地后保持静止;
-
-\textbf{进攻者 $A_j\ (j=1,\ldots,N_A)$}: $N_A$ 艘试图捕获目标 $T$ 的对抗方无人艇;
-
-\textbf{防御者 $D_i\ (i=1,\ldots,N_D)$}: $N_D$ 艘需要保护目标 $T$ 的友方无人艇,
-其任务是在非自杀式约束下拦截进攻者, 并确保目标安全到达目的地.
+考虑如图~\ref{fig:tad_scene} 所示的 TAD 博弈场景, 场景中涉及三类角色: 目标 $T$
+为一艘需要被保护的无人艇, 任务是从初始位置出发前往指定目的地
+$\mathbf{p}_{\mathrm{dest}}$, 到达后保持静止; 进攻者 $A_j\ (j=1,\ldots,N_A)$ 共
+$N_A$ 艘, 任务是捕获目标 $T$; 防御者 $D_i\ (i=1,\ldots,N_D)$ 共 $N_D$ 艘, 任务
+是在非自杀式约束下拦截进攻者并确保目标安全到达目的地. 图~\ref{fig:tad_queue}
+进一步展示了三类角色的拓扑结构与阵型变化, 清晰呈现了目标、进攻者与防御者之间的
+相对位置关系.
 
 \begin{figure}[!htbp]
   \centering
@@ -38,9 +36,6 @@ $\mathbf{p}_{\mathrm{dest}}$, 到达目的地后保持静止;
   \bicaption{TAD 目标防御博弈场景示意}{Illustration of the Target-Attacker-Defender game scenario}
   \label{fig:tad_scene}
 \end{figure}
-
-图~\ref{fig:tad_queue} 进一步展示了 TAD 博弈的拓扑结构与阵型变化示意, 清晰呈现
-了目标、进攻者与防御者之间的相对位置关系.
 
 \begin{figure}[!htbp]
   \centering
@@ -64,16 +59,11 @@ $\mathbf{p}_{\mathrm{dest}}$, 到达目的地后保持静止;
 
 \subsection{非自杀式约束}
 \label{subsec:non_suicidal}
-本文所研究的 TAD 博弈中, 进攻者与防御者均为\textbf{非自杀式}, 具体含义为:
-
-\textbf{非自杀式防御者}: 防御者在拦截进攻者时不能与进攻者同归于尽, 拦截完成后仍
-保留机动能力, 可继续执行后续防御任务;
-
-\textbf{非自杀式进攻者}: 进攻者在遭遇防御者拦截后不会主动放弃, 而是选择绕开防御
-者继续接近目标.
-
-非自杀式约束的引入使得传统 ``拦截即结束'' 的建模假设不再成立, 对策略设计提出了
-新的挑战.
+本文所研究的 TAD 博弈中, 进攻者与防御者均为\textbf{非自杀式}: 一方面, 防御者
+在拦截进攻者时不能与进攻者同归于尽, 拦截完成后仍保留机动能力以执行后续防御任
+务; 另一方面, 进攻者在遭遇防御者拦截后不会主动放弃, 而是选择绕开防御者继续接
+近目标. 非自杀式约束的引入使得传统 ``拦截即结束'' 的建模假设不再成立, 对策略
+设计与奖励机制提出了新的挑战.
 
 \subsection{软拦截与软捕获判据}
 \label{subsec:tad_criteria}
@@ -280,21 +270,13 @@ r_t = \beta_1 r_{\mathrm{int}} + \beta_2 r_{\mathrm{shield}} + \beta_3 r_{\mathr
 \end{figure}
 
 其中各分量定义如下:
-
-\textbf{(1) 拦截奖励 $r_{\mathrm{int}}$:} 防御者成功拦截进攻者时给予正奖励, 按拦
-截发生时刻距目标-进攻者连线的远近给予不同权重;
-
-\textbf{(2) 屏障奖励 $r_{\mathrm{shield}}$:} 防御者位于目标与最近进攻者连线之间时
-给予正奖励, 鼓励形成防护屏障;
-
-\textbf{(3) 目标跟随奖励 $r_{\mathrm{target}}$:} 防御者与目标距离适中时给予正奖
-励 (既不过近影响目标机动, 也不过远失去保护能力);
-
-\textbf{(4) 安全惩罚 $r_{\mathrm{safe}}$:} 防御者与进攻者距离过近 (触发非自杀式约
-束临界) 或与其他防御者距离过近时给予负惩罚;
-
-\textbf{(5) 终止奖励 $r_{\mathrm{term}}$:} 目标成功到达目的地或完成全程护航任务
-时给予较大正奖励; 目标被捕获时给予较大负奖励.
+\begin{itemize}
+  \item \textbf{拦截奖励} $r_{\mathrm{int}}$: 防御者成功拦截进攻者时给予正奖励, 并按拦截发生时刻距目标-进攻者连线的远近赋予不同权重;
+  \item \textbf{屏障奖励} $r_{\mathrm{shield}}$: 防御者位于目标与最近进攻者连线之间时给予正奖励, 鼓励形成防护屏障;
+  \item \textbf{目标跟随奖励} $r_{\mathrm{target}}$: 防御者与目标距离适中时给予正奖励 (既不过近以免影响目标机动, 也不过远以免失去保护能力);
+  \item \textbf{安全惩罚} $r_{\mathrm{safe}}$: 防御者与进攻者距离过近 (触发非自杀式约束临界) 或与其他防御者距离过近时给予负惩罚;
+  \item \textbf{终止奖励} $r_{\mathrm{term}}$: 目标成功到达目的地或完成全程护航任务时给予较大正奖励, 目标被捕获时给予较大负奖励.
+\end{itemize}
 
 \section{仿真实验与结果分析}
 \label{sec:tad_exp}
