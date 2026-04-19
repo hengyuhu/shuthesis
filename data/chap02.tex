@@ -191,7 +191,7 @@ $h_t=\{o_0,a_0,\ldots,o_t\}$ 进行决策.
 \section{深度强化学习理论}
 \label{sec:drl_theory}
 
-\subsection{强化学习基本概念}
+\subsection{强化学习基本概念与 Actor-Critic 框架}
 \label{subsec:rl_basic}
 强化学习通过智能体与环境的交互学习最优策略~\cite{sutton2018reinforcement}. 在 MDP
 框架下, 智能体在时刻 $t$ 观测到状态 $s_t\in\mathcal{S}$, 依据策略
@@ -210,8 +210,6 @@ Q^\pi(s,a) = \mathbb{E}_\pi[G_t\mid s_t=s, a_t=a],
 V^\pi(s) = \sum_{a}\pi(a|s)\sum_{s'}\mathcal{P}(s'|s,a)\big[r(s,a) + \gamma V^\pi(s')\big].
 \end{equation}
 
-\subsection{策略梯度与 Actor-Critic 框架}
-\label{subsec:actor_critic}
 相比于基于值函数的方法, 策略梯度方法直接对参数化策略 $\pi_\theta(a|s)$ 进行优
 化, 特别适合连续动作空间下的控制问题. 策略梯度定理给出
 \begin{equation}
@@ -252,20 +250,15 @@ Critic 网络的损失函数为
 PPO 通过裁剪概率比避免了策略的过度更新, 在保证训练稳定性的同时显著提升了训练效
 率, 适合于本文研究的连续动作空间下欠驱动无人艇博弈问题.
 
-\subsection{多智能体集中训练-分布式执行框架}
-\label{subsec:ctde}
+\subsection{多智能体强化学习与 MAPPO 算法}
+\label{subsec:marl_mappo}
 集中训练-分布式执行 (Centralized Training with Decentralized Execution, CTDE)
 是多智能体强化学习的核心范式. 其基本思想是: 在训练阶段, Critic 网络可访问全局状
 态 $s$ 与所有智能体的联合动作信息, 以克服环境从单智能体视角下的非平稳性; 在执行
 阶段, 每个智能体仅依据自身局部观测 $o_i$ 和策略 $\pi_{\theta_i}(a_i|o_i)$ 做出决
-策, 降低了对通信的依赖.
+策, 降低了对通信的依赖. CTDE 范式兼具训练时信息共享带来的稳定收敛优势与执行时分
+布式决策带来的去中心化特性, 兼容 on-policy 与 off-policy 算法, 具有广泛的适用性.
 
-CTDE 范式在实际部署中具有显著优势: 第一, 训练时的信息共享有助于稳定价值估计,
-加速收敛; 第二, 执行时的分布式决策使系统具备去中心化、抗干扰的特点; 第三, 该范
-式兼容 on-policy 与 off-policy 算法, 具有广泛的适用性.
-
-\subsection{多智能体近端策略优化算法}
-\label{subsec:mappo}
 多智能体近端策略优化 (MAPPO)~\cite{yu2022surprising} 是 PPO 在多智能体场景下的
 自然扩展. 该算法为每个智能体配备独立的 Actor 网络 $\pi_{\theta_i}(a_i|o_i)$, 而
 所有智能体共享一个基于全局状态 $s$ 的 Critic 网络 $V_\phi(s)$. Actor 网络的更
